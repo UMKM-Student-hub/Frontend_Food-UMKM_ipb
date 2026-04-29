@@ -27,6 +27,14 @@ interface AuthProviderState {
   isInitializing: boolean;
 }
 
+interface DecodedJwtPayload {
+  exp?: number;
+  sub?: string;
+  role?: string;
+  name?: string;
+  email?: string;
+}
+
 export class AuthProvider extends Component<
   AuthProviderProps,
   AuthProviderState
@@ -55,7 +63,7 @@ export class AuthProvider extends Component<
 
   restoreSession = async (token: string) => {
     try {
-      const decoded: any = jwtDecode(token);
+      const decoded = jwtDecode<DecodedJwtPayload>(token);
       const currentTime = Date.now() / 1000;
       if (decoded.exp && decoded.exp < currentTime) {
         console.warn("Token expired, logging out...");
