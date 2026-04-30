@@ -19,7 +19,7 @@ export enum DiscountType {
 
 export enum ProductCategory {
   MAKANAN = "makanan",
-  MINUMAN = "minuman",
+  MINUMAN = "MINUMAN",
   JAJANAN = "jajanan",
   LAINNYA = "lainnya",
 }
