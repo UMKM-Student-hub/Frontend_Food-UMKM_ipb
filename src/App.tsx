@@ -1,67 +1,48 @@
-import React, { Component } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Pastikan path import ini mengarah ke lokasi file Navbar.tsx kamu
-import { Navbar } from './components/common/NavbarPembeli'; 
+// Import komponen Footer yang baru saja dibuat
+// Sesuaikan path import ini jika struktur folder berbeda
+import { Footer } from './components/common/Footer';
 
-export default class App extends Component {
+interface AppProps {}
+interface AppState {}
+
+class App extends React.Component<AppProps, AppState> {
   render() {
     return (
       <Router>
-        {/* Wrapper utama dengan Tailwind: min-height layar penuh & flexbox */}
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Wrapper utama agar Footer selalu terdorong ke bawah layar */}
+        <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
           
-          {/* Memanggil Navbar */}
-          <Navbar />
-
-          {/* Area Konten Utama */}
+          {/* Main Content Area (flex-grow akan mengisi sisa ruang kosong) */}
           <main className="flex-grow">
             <Routes>
-              {/* Redirect path awal ('/') ke halaman catalog */}
-              <Route path="/" element={<Navigate to="/catalog" replace />} />
-
-              {/* Placeholder Halaman Sementara */}
+              {/* Route dummy sementara untuk melihat hasilnya */}
               <Route 
-                path="/catalog" 
+                path="/" 
                 element={
-                  <div className="flex justify-center items-center h-64 text-2xl font-semibold text-gray-700">
-                    Halaman Home (Catalog)
+                  <div className="flex flex-col items-center justify-center h-full min-h-[50vh]">
+                    <h1 className="text-4xl font-bold text-[#02145A] mb-4">
+                      UniBites
+                    </h1>
+                    <p className="text-gray-600">
+                      Platform Digital UMKM Mahasiswa IPB University
+                    </p>
                   </div>
                 } 
               />
               
-              <Route 
-                path="/my-orders" 
-                element={
-                  <div className="flex justify-center items-center h-64 text-2xl font-semibold text-gray-700">
-                    Halaman Pesanan Saya
-                  </div>
-                } 
-              />
-
-              <Route 
-                path="/profile" 
-                element={
-                  <div className="flex justify-center items-center h-64 text-2xl font-semibold text-gray-700">
-                    Halaman Profil Pengguna
-                  </div>
-                } 
-              />
-              
-              {/* Tangkap URL yang tidak ada (404) */}
-              <Route 
-                path="*" 
-                element={
-                  <div className="flex justify-center items-center h-64 text-2xl font-semibold text-red-500">
-                    404 - Halaman Tidak Ditemukan
-                  </div>
-                } 
-              />
+              {/* Nantinya route CatalogPage, DealsPage, dll dimasukkan di sini */}
             </Routes>
           </main>
-          
+
+          {/* Footer Component */}
+          <Footer />
         </div>
       </Router>
     );
   }
 }
+
+export default App;
