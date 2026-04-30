@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 
 // Pastikan path import ini sesuai dengan struktur foldermu
-import logoMascot from '/images/logo-unibites.png';
+import logoMascot from '/images/logo-navbar.png';
 import iconProfile from '/images/logo-profil.png';
 
 interface NavbarProps {
