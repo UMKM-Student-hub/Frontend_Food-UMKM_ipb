@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import MainLayout from "./layouts/MainLayout.tsx";
+import { ProductDetailPageWrapper } from "./pages/buyer/ProductDetailPage.tsx";
 
 const Loader = () => (
   <div className="flex justify-center items-center h-screen text-green-700">
@@ -37,6 +38,12 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      // === RUTE BARU UNTUK HALAMAN DETAIL KANTIN ===
+      {
+        path: "catalog/:umkmId",
+        element: <ProductDetailPageWrapper />
+      },
+      // =============================================
       {
         path: "deals",
         element: (

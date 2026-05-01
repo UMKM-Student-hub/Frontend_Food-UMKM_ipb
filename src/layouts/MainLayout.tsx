@@ -10,9 +10,7 @@ class MainLayout extends Component {
         <Navbar />
 
         <main className="grow flex flex-col items-center">
-          <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grow">
             <Outlet />
-          </div>
         </main>
 
         <Footer />
