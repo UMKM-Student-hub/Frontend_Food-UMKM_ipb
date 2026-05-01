@@ -1,5 +1,5 @@
 import { ApiService } from "./ApiService";
-import { Promotion, CreatePromoRequest } from "../domain/Promotion";
+import type { Promotion, CreatePromoRequest } from "../domain/Promotion";
 
 export class PromoService extends ApiService {
   // --- Pembeli ---

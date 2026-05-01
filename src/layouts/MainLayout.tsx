@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Outlet } from "react-router-dom";
-import { Navbar } from "../components/common/NavbarPembeli";
+import { Navbar } from "../components/common/Navbar";
 import { Footer } from "../components/common/Footer";
 
 class MainLayout extends Component {
@@ -9,10 +9,9 @@ class MainLayout extends Component {
       <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
         <Navbar />
 
-        <main className="grow flex flex-col items-center">
-          <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grow">
-            <Outlet />
-          </div>
+        {/* ✅ Hapus wrapper div dengan padding — tiap page atur layout sendiri */}
+        <main className="grow flex flex-col">
+          <Outlet />
         </main>
 
         <Footer />

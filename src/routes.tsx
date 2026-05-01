@@ -8,7 +8,8 @@ const Loader = () => (
   </div>
 );
 
-const CatalogPage = lazy(() => import("./pages/buyer/CatalogPage.tsx"));
+const CatalogPage = lazy(() => import("./pages/buyer/Home.tsx"));
+const ProfilePage = lazy(() => import("./pages/buyer/ProfilePage.tsx"));
 const DealsPage = lazy(() => import("./pages/buyer/DealsPage.tsx"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage.tsx"));
 
@@ -34,6 +35,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<Loader />}>
             <CatalogPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <Suspense fallback={<Loader />}>
+            <ProfilePage />
           </Suspense>
         ),
       },
