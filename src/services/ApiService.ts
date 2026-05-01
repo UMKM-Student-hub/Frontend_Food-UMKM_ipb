@@ -3,7 +3,7 @@ export class ApiService {
 
   constructor() {
     this.baseUrl =
-      import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000/api/v1";
+      import.meta.env.VITE_API_URL ?? "http://localhost:8000/api/v1";
   }
 
   protected getHeaders(): HeadersInit {
@@ -22,11 +22,11 @@ export class ApiService {
     return res.json();
   }
 
-  protected async post<T>(path: string, body?: unknown): Promise<T> {
+  protected async post<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",
       headers: this.getHeaders(),
-      body: body ? JSON.stringify(body) : undefined,
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw await this.parseError(res);
     return res.json();
@@ -53,10 +53,10 @@ export class ApiService {
 
   private async parseError(res: Response): Promise<Error> {
     try {
-      const errorData = await res.json();
-      return new Error(errorData.detail ?? "Terjadi kesalahan server");
+      const errData = await res.json();
+      return new Error(errData.detail ?? "Terjadi kesalahan server");
     } catch {
-      return new Error(`HTTP Error ${res.status}`);
+      return new Error(`HTTP Error ${res.status}: ${res.statusText}`);
     }
   }
 }

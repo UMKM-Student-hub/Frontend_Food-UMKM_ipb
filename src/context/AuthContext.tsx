@@ -71,7 +71,7 @@ export class AuthProvider extends Component<
         return;
       }
 
-      localStorage.setItem("access_token", token);
+      this.authService.setToken(token);
 
       const user = await this.authService.getMe();
 
@@ -92,7 +92,7 @@ export class AuthProvider extends Component<
   };
 
   logoutAction = () => {
-    localStorage.removeItem("access_token");
+    this.authService.clearAuth();
     this.setState({
       user: null,
       token: null,

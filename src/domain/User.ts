@@ -6,19 +6,23 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface AuthToken {
   access_token: string;
   token_type: string;
-  role: UserRole;
 }
 
 export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface RegisterRequest {
