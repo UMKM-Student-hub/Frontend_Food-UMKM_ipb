@@ -1,13 +1,11 @@
 import { ApiService } from "./ApiService";
-import { Promotion, CreatePromoRequest } from "../domain/Promotion";
+import type { Promotion, CreatePromoRequest } from "../domain/Promotion";
 
 export class PromoService extends ApiService {
-  // --- Pembeli ---
   async listActivePromos(): Promise<Promotion[]> {
     return this.get<Promotion[]>("/promos/active");
   }
 
-  // --- Penjual ---
   async getMyPromos(): Promise<Promotion[]> {
     return this.get<Promotion[]>("/promos/my");
   }

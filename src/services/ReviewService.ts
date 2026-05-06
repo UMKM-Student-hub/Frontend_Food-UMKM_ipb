@@ -1,5 +1,5 @@
 import { ApiService } from "./ApiService";
-import { Review, ReviewCreateRequest } from "../domain/Review";
+import type { Review, ReviewCreateRequest } from "../domain/Review";
 
 export class ReviewService extends ApiService {
   // --- Pembeli ---

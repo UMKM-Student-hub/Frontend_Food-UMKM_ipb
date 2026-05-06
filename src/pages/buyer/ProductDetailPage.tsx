@@ -6,7 +6,7 @@ import type { MenuItem } from '../../domain/MenuItem';
 import { ProductCategory } from '../../domain/enums';
 import { CategoryFilter } from '../../components/buyer/CategoryFilter';
 import { MenuCard } from '../../components/buyer/MenuCard';
-import { SearchBar } from '../../components/buyer/SearchKantin'; // PERBAIKAN: Gunakan SearchBar
+import { SearchBar } from '../../components/buyer/SearchKantin';
 
 interface ProductDetailState {
   umkm: UMKM | null;
@@ -15,8 +15,8 @@ interface ProductDetailState {
   selectedCategory: string | undefined;
   searchKeyword: string;
   isLoading: boolean;
-  isCartModalOpen: boolean; // State untuk modal kamu
-  cartItems: CartItem[]; // Data keranjang
+  isCartModalOpen: boolean;
+  cartItems: CartItem[];
   error: string | null;
 }
 
