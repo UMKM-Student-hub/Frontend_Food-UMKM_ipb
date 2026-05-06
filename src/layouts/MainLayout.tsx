@@ -9,7 +9,6 @@ class MainLayout extends Component {
       <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
         <Navbar />
 
-        {/* ✅ Hapus wrapper div dengan padding — tiap page atur layout sendiri */}
         <main className="grow flex flex-col">
           <Outlet />
         </main>
