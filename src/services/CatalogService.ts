@@ -2,17 +2,28 @@ import { ApiService } from "./ApiService";
 import type { UMKM } from "../domain/UMKM";
 import type { MenuItem, MenuItemCreateRequest } from "../domain/MenuItem";
 
+
 export class CatalogService extends ApiService {
-  // --- Pembeli (Buyer) ---
 
   async listAllUMKM(): Promise<UMKM[]> {
-    // Sesuai catalog_controller.py -> @router.get("/")
     return this.get<UMKM[]>("/products/");
   }
 
-  async getUMKMMenu(umkmId: number): Promise<MenuItem[]> {
-    // Sesuai catalog_controller.py -> @router.get("/umkm/{umkm_id}")
-    return this.get<MenuItem[]>(`/products/umkm/${umkmId}`);
+  async getUMKMProfile(umkmId: number): Promise<UMKM> {
+    return this.get<UMKM>(`/products/store/${umkmId}`);
+  }
+
+  async getUMKMMenu(
+    umkmId: number,
+    keyword?: string,
+    category?: string,
+  ): Promise<MenuItem[]> {
+    const q = new URLSearchParams();
+    if (keyword) q.append("keyword", keyword);
+    if (category) q.append("category", category);
+
+    const queryString = q.toString() ? `?${q.toString()}` : "";
+    return this.get<MenuItem[]>(`/products/umkm/${umkmId}${queryString}`);
   }
 
   async searchProducts(
@@ -29,14 +40,11 @@ export class CatalogService extends ApiService {
     return this.get<MenuItem>(`/products/${menuItemId}`);
   }
 
-  // --- Penjual (Seller) ---
-
   async addProduct(payload: MenuItemCreateRequest): Promise<MenuItem> {
     return this.post<MenuItem>("/products/", payload);
   }
 
   async updateStock(itemId: number, newStock: number): Promise<MenuItem> {
-    // Backend menggunakan Query Parameter: ?new_stock=
     return this.patch<MenuItem>(
       `/products/${itemId}/stock?new_stock=${newStock}`,
     );
@@ -49,20 +57,6 @@ export class CatalogService extends ApiService {
   async reactivateProduct(itemId: number): Promise<MenuItem> {
     return this.patch<MenuItem>(`/products/${itemId}/reactivate`);
   }
-
-  async toggleStoreStatus(umkmId: number): Promise<UMKM> {
-    // Diambil dari umkm_controller.py -> @router.patch("/{id}/toggle-status")
-    return this.patch<UMKM>(`/umkm/${umkmId}/toggle-status`);
-  }
-
-  async getMyProducts(): Promise<MenuItem[]> {
-    return this.get<MenuItem[]>("/products/my");
-  }
-
-  async updateProduct(
-    itemId: number,
-    payload: Partial<MenuItemCreateRequest>,
-  ): Promise<MenuItem> {
-    return this.patch<MenuItem>(`/products/${itemId}`, payload);
-  }
 }
+
+export const catalogService = new CatalogService();

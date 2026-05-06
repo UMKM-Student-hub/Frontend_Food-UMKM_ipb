@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom'; // Tambahkan import Link
 
-// Sesuaikan path ini dengan struktur folder aslimu
-import type{ Promotion } from '../../domain/Promotion';
-import type { DiscountType } from '../../domain/enums';
+import type { Promotion } from '../../domain/Promotion';
+import { DiscountType } from '../../domain/enums'; // Pastikan path-nya sesuai
 
 interface PromoCardProps {
   promo: Promotion;
@@ -11,40 +11,56 @@ interface PromoCardProps {
 
 export class PromoCard extends Component<PromoCardProps> {
   
-  // Method untuk memformat teks diskon berdasarkan tipe (Persentase vs Nominal Rupiah)
+  // Method untuk memformat teks diskon berdasarkan tipe
   private formatDiscount(): string {
     const { promo } = this.props;
     
-    if (promo.discount_type === DiscountType.PERCENTAGE) {
-      return `${promo.discount_value}%`;
+    // Penanganan aman untuk snake_case maupun camelCase dari API
+    const discountType = (promo as any).discount_type || promo.discountType;
+    const discountValue = (promo as any).discount_value || promo.discountValue;
+    
+    if (discountType === DiscountType.PERCENTAGE) {
+      return `${discountValue}%`;
     }
     
-    // Jika NOMINAL, format ke dalam standar Rupiah
-    return `Rp${promo.discount_value.toLocaleString('id-ID')}`;
+    return `Rp${discountValue.toLocaleString('id-ID')}`;
   }
 
   render() {
     const { promo, expiryLabel } = this.props;
 
-    // Menggunakan photo_url dari entitas backend.
-    // Jika null (belum ada foto), gunakan gambar placeholder.
-    const fallbackImage = "https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&q=80&w=400";
-    const displayImage = promo.photo_url || fallbackImage;
+    // Mendapatkan ID Kantin dan URL Foto (dukungan camelCase & snake_case)
+    const umkmId = (promo as any).umkm_id || promo.umkmId;
+    const photoUrl = (promo as any).photo_url || (promo as any).photoUrl;
 
     return (
-      <div className="w-full bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col group cursor-pointer">
+      // 1. Ubah div luar menjadi Link agar seluruh card bisa diklik menuju ProductDetailPage
+      <Link 
+        to={`/catalog/${umkmId}`} 
+        className="block w-full bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 group cursor-pointer"
+      >
         
         {/* Bagian Atas: Gambar dan Badge Diskon */}
-        <div className="relative h-40 md:h-48 w-full overflow-hidden">
-          <img 
-            src={displayImage} 
-            alt={promo.name} 
-            // Efek zoom-in perlahan pada gambar saat card di-hover
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-in-out"
-          />
+        <div className="relative h-40 md:h-48 w-full overflow-hidden bg-[#F8F9FA]">
           
-          {/* Badge Diskon (Posisi Kiri Bawah Gambar sesuai desain) */}
-          <div className="absolute bottom-0 left-0 bg-[#FFA800] text-white font-extrabold text-2xl md:text-3xl px-4 py-1 rounded-tr-xl drop-shadow-md">
+          {/* 2. Logika Pengecekan Foto Promo */}
+          {photoUrl ? (
+            <img 
+              src={photoUrl} 
+              alt={promo.name} 
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-in-out"
+            />
+          ) : (
+            // Jika foto tidak ada, tampilkan placeholder abu-abu ini
+            <div className="w-full h-full flex items-center justify-center bg-gray-200 group-hover:scale-110 transition-transform duration-500 ease-in-out">
+              <span className="text-gray-500 font-medium text-sm px-4 text-center">
+                Gambar belum tersedia
+              </span>
+            </div>
+          )}
+          
+          {/* Badge Diskon (Tetap Tampil Walau Gambar Tidak Ada) */}
+          <div className="absolute bottom-0 left-0 bg-[#FFA800] text-white font-extrabold text-2xl md:text-3xl px-4 py-1 rounded-tr-xl drop-shadow-md z-10">
             {this.formatDiscount()}
           </div>
         </div>
@@ -52,19 +68,18 @@ export class PromoCard extends Component<PromoCardProps> {
         {/* Bagian Bawah: Informasi Promo */}
         <div className="p-4 flex flex-col items-start bg-white">
           
-          {/* Nama Produk / Promo */}
+          {/* Nama Promo */}
           <h3 className="text-gray-800 font-bold text-lg md:text-xl mb-3 truncate w-full">
             {promo.name}
           </h3>
           
-          {/* Badge Sisa Waktu (Warna soft orange dengan teks dark orange) */}
+          {/* Badge Sisa Waktu */}
           <div className="bg-[#FDECE2] text-[#C05020] font-bold text-sm px-3 py-1.5 rounded-md">
             {expiryLabel}
           </div>
 
         </div>
-        
-      </div>
+      </Link>
     );
   }
 }
