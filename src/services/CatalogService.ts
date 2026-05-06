@@ -54,4 +54,15 @@ export class CatalogService extends ApiService {
     // Diambil dari umkm_controller.py -> @router.patch("/{id}/toggle-status")
     return this.patch<UMKM>(`/umkm/${umkmId}/toggle-status`);
   }
+
+  async getMyProducts(): Promise<MenuItem[]> {
+    return this.get<MenuItem[]>("/products/my");
+  }
+
+  async updateProduct(
+    itemId: number,
+    payload: Partial<MenuItemCreateRequest>,
+  ): Promise<MenuItem> {
+    return this.patch<MenuItem>(`/products/${itemId}`, payload);
+  }
 }
