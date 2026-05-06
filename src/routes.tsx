@@ -13,7 +13,10 @@ const Loader = () => (
 const HomePage = lazy(() => import("./pages/buyer/Home.tsx"));
 const DealsPage = lazy(() => import("./pages/buyer/DealsPage.tsx"));
 const ProfilePage = lazy(() => import("./pages/buyer/ProfilePage.tsx"));
-const LoginPage = lazy(() => import("./pages/auth/LoginPage.tsx"));
+// Kita sesuaikan import-nya agar bisa membaca named export 'AuthPage' dari UserLoginRegister.tsx
+const AuthPage = lazy(() => 
+  import("./pages/auth/UserLoginRegister.tsx").then(module => ({ default: module.AuthPage }))
+);
 const ProductDetailPage = lazy(() => import("./pages/buyer/ProductDetailPage.tsx"));
 
 const SellerDashboardPage = lazy(
@@ -55,7 +58,17 @@ const router = createBrowserRouter([
         path: "login",
         element: (
           <Suspense fallback={<Loader />}>
-            <LoginPage />
+            {/* Gunakan AuthPage yang baru */}
+            <AuthPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "register",
+        element: (
+          <Suspense fallback={<Loader />}>
+            {/* Gunakan komponen yang sama untuk register, karena ada tab navigasinya */}
+            <AuthPage />
           </Suspense>
         ),
       },
