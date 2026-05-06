@@ -1,6 +1,5 @@
 import { ApiService } from "./ApiService";
-import { UMKMCreateRequest } from "../domain/UMKM";
-import { UMKM } from "../domain/UMKM";
+import { type UMKMCreateRequest, type UMKM } from "../domain/UMKM";
 
 class UMKMService extends ApiService {
   async createUMKM(payload: UMKMCreateRequest): Promise<UMKM> {
