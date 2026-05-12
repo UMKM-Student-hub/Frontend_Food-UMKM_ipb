@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate, useParams } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import MainLayout from "./layouts/MainLayout.tsx";
 import SellerLayout from "./layouts/SellerLayout.tsx";
-// import { SellerGuard } from "./guards/SellerGuard.tsx"; // Di-comment sementara untuk testing
+import { SellerGuard } from "./guards/SellerGuard.tsx";
 
 const Loader = () => (
   <div className="flex justify-center items-center h-screen text-green-700">
@@ -18,6 +18,13 @@ const AuthPage = lazy(() =>
   import("./pages/auth/UserLoginRegister.tsx").then(module => ({ default: module.AuthPage }))
 );
 const ProductDetailPage = lazy(() => import("./pages/buyer/ProductDetailPage.tsx"));
+const MyOrdersPage = lazy(() => 
+  import("./pages/buyer/Pesanan.tsx").then(module => ({ default: module.MyOrdersPage }))
+);
+const AdminLoginRegister = lazy(() => 
+  import("./pages/auth/AdminLoginRegister.tsx").then(module => ({ default: module.RegisterAdminPage }))
+);
+
 
 const SellerDashboardPage = lazy(
   () => import("./pages/seller/SellerDashboardPage.tsx"),
@@ -73,6 +80,27 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "register-mitra", 
+        element: (
+          <Suspense fallback={<Loader />}>
+            <AdminLoginRegister />
+          </Suspense>
+        ),
+      },
+      {
+        path: "my-orders", // Path sesuai spesifikasi dokumen 
+        element: (
+          <Suspense fallback={<Loader />}>
+            {/* Dibungkus BuyerGuard karena hanya boleh diakses mahasiswa (BUYER) 
+              sesuai aturan keamanan sistem [cite: 186, 506]
+            */}
+            <SellerGuard>
+              <MyOrdersPage />
+            </SellerGuard>
+          </Suspense>
+      ),
+      },
+      {
         path: "home",
         element: (
           <Suspense fallback={<Loader />}>
@@ -80,6 +108,7 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      
       // === RUTE BARU UNTUK HALAMAN DETAIL KANTIN ===
       {
         path: "catalog/:umkmId",
