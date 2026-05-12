@@ -2,8 +2,7 @@ import { ApiService } from "./ApiService";
 import type { UMKM } from "../domain/UMKM";
 import type { MenuItem, MenuItemCreateRequest } from "../domain/MenuItem";
 
-class CatalogService extends ApiService {
-
+export class CatalogService extends ApiService {
   async listAllUMKM(): Promise<UMKM[]> {
     return this.get<UMKM[]>("/products/");
   }

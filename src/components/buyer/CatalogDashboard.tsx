@@ -1,7 +1,7 @@
 import React, { Component, createRef } from 'react';
+import { Link } from 'react-router-dom';
 import type { UMKM } from '../../domain/UMKM';
 import type { MenuItem } from '../../domain/MenuItem';
-import type { ProductCategory } from '../../domain/enums';
 import { CatalogService } from '../../services/CatalogService';
 
 // ==========================================
@@ -16,7 +16,7 @@ interface UMKMCardState {
   isLoading: boolean;
 }
 
-class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
+export class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
   private catalogService = new CatalogService();
   private scrollRef = createRef<HTMLDivElement>();
 
@@ -30,7 +30,6 @@ class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
 
   async componentDidMount() {
     try {
-      // Mengambil menu khusus untuk UMKM ini saja
       const menus = await this.catalogService.getUMKMMenu(this.props.umkm.id);
       this.setState({ menus, isLoading: false });
     } catch (error) {
@@ -39,8 +38,9 @@ class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
     }
   }
 
-  // Method untuk menggeser korsel menu ke kanan
-  private scrollRight = (): void => {
+  // Mencegah klik tombol panah agar tidak melempar user ke halaman detail kantin
+  private scrollRight = (e: React.MouseEvent): void => {
+    e.preventDefault(); 
     if (this.scrollRef.current) {
       this.scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
     }
@@ -52,7 +52,11 @@ class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
     const fallbackImage = "https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&q=80&w=400";
 
     return (
-      <div className="bg-white border-2 border-[#FFCF00] rounded-2xl p-5 md:p-6 mb-6 shadow-sm w-full">
+      // Seluruh area Card sekarang dibungkus Link agar bisa diklik
+      <Link 
+        to={`/catalog/${umkm.id}`}
+        className="block bg-white border-2 border-[#FFCF00] rounded-2xl p-5 md:p-6 mb-6 shadow-sm w-full cursor-pointer hover:shadow-lg transition-shadow duration-300 relative"
+      >
         {/* Header Card: Info Kantin & Rating */}
         <div className="flex justify-between items-start mb-4">
           <div>
@@ -77,10 +81,10 @@ class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
             <div 
               ref={this.scrollRef} 
               className="flex gap-4 md:gap-6 overflow-x-auto scroll-smooth hide-scrollbar pb-2"
-              style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }} // Fallback no-scrollbar
+              style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
             >
               {menus.map((menu) => (
-                <div key={menu.id} className="flex-shrink-0 w-36 md:w-44 flex flex-col cursor-pointer hover:opacity-90 transition-opacity">
+                <div key={menu.id} className="flex-shrink-0 w-36 md:w-44 flex flex-col hover:opacity-90 transition-opacity">
                   <img 
                     src={menu.photo_url || fallbackImage} 
                     alt={menu.name} 
@@ -97,7 +101,7 @@ class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
             </div>
           )}
 
-          {/* Tombol Arrow Kanan (Hanya muncul jika menu banyak) */}
+          {/* Tombol Arrow Kanan */}
           {menus.length > 3 && (
             <button 
               onClick={this.scrollRight}
@@ -108,7 +112,7 @@ class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
             </button>
           )}
         </div>
-      </div>
+      </Link>
     );
   }
 }
@@ -150,20 +154,16 @@ export class CatalogDashboard extends Component<{}, CatalogDashboardState> {
 
   render() {
     const { umkms, activeFilter, isLoading } = this.state;
-    
-    // Konfigurasi Tab Filter
     const filters = ['Semua', 'Makanan', 'Minuman', 'Jajanan'];
 
     return (
       <section className="bg-[#FFFCF5] min-h-screen w-full py-10">
         <div className="max-w-7xl mx-auto px-16 lg:px-16">
           
-          {/* Judul Halaman */}
           <h1 className="text-3xl md:text-4xl font-bold text-[#1B2B65] mb-6">
             Jajan dari Kantin Favoritmu Hari Ini!
           </h1>
 
-          {/* Baris Filter Kategori */}
           <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-8">
             {filters.map((f) => (
               <button
@@ -179,14 +179,12 @@ export class CatalogDashboard extends Component<{}, CatalogDashboardState> {
               </button>
             ))}
 
-            {/* Dropdown Kantin Fakultas (Bisa dikembangkan fungsionalitasnya nanti) */}
             <button className="px-5 py-2 rounded-full font-semibold text-sm md:text-base bg-transparent border-2 border-[#FFCF00] text-[#1B2B65] hover:bg-[#FFCF00]/20 flex items-center gap-2">
               Kantin Fakultas 
               <span className="text-xs">▼</span>
             </button>
           </div>
 
-          {/* Daftar Kantin (UMKM) */}
           {isLoading ? (
             <div className="text-center py-10 text-gray-500 font-semibold">Memuat Kantin Favoritmu...</div>
           ) : (
@@ -197,7 +195,6 @@ export class CatalogDashboard extends Component<{}, CatalogDashboardState> {
             </div>
           )}
 
-          {/* Pagination Bawah */}
           {!isLoading && umkms.length > 0 && (
             <div className="flex justify-center items-center gap-4 mt-8">
               <button className="bg-[#FFA800] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md hover:bg-[#e69700] transition-colors">
@@ -211,7 +208,6 @@ export class CatalogDashboard extends Component<{}, CatalogDashboardState> {
 
         </div>
         
-        {/* Tambahan Style Global untuk Hide Scrollbar (Hanya khusus di file ini) */}
         <style dangerouslySetInnerHTML={{__html: `
           .hide-scrollbar::-webkit-scrollbar { display: none; }
         `}} />
@@ -219,3 +215,5 @@ export class CatalogDashboard extends Component<{}, CatalogDashboardState> {
     );
   }
 }
+
+export default CatalogDashboard;
