@@ -6,6 +6,7 @@ import type { MenuItem } from "../../domain/MenuItem";
 import { ProductCategory } from "../../domain/enums";
 import { withRouter } from "../../utils/withRouter";
 import { UMKMProfileHeader } from "../../components/buyer/UMKMProfileHeader";
+import { ReviewModal } from "../../components/buyer/ReviewModal";
 import { MenuFilterBar } from "../../components/buyer/MenuFilterBar";
 import { MenuItemCard } from "../../components/buyer/MenuItemCard";
 import { DetailProduk } from "../../components/buyer/DetailProduk";
@@ -32,12 +33,13 @@ interface ProductDetailState {
   selectedProduct: MenuItem | null;
   isDetailProdukOpen: boolean;
   isDetailKeranjangOpen: boolean;
-  isSubmittingOrder: boolean; // <-- STATE BARU UNTUK LOADING CHECKOUT
+  isSubmittingOrder: boolean;
+  isReviewModalOpen: boolean;
 }
 
 class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
   private catalogService = new CatalogService();
-  private orderService = new OrderService(); // <-- INSTANSIASI SERVICE BARU
+  private orderService = new OrderService();
 
   constructor(props: RouterProps) {
     super(props);
@@ -55,6 +57,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       isDetailProdukOpen: false,
       isDetailKeranjangOpen: false,
       isSubmittingOrder: false,
+      isReviewModalOpen: false,
     };
   }
 
@@ -139,6 +142,14 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
 
   private handleCloseKeranjang = (): void => {
     this.setState({ isDetailKeranjangOpen: false });
+  };
+
+  private handleOpenReviewModal = (): void => {
+    this.setState({ isReviewModalOpen: true });
+  };
+
+  private handleCloseReviewModal = (): void => {
+    this.setState({ isReviewModalOpen: false });
   };
 
   private handleAddToCart = (
@@ -266,6 +277,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       isDetailProdukOpen,
       isDetailKeranjangOpen,
       isSubmittingOrder,
+      isReviewModalOpen,
     } = this.state;
 
     if (isLoading) return <LoadingSpinner size="lg" />;
@@ -288,7 +300,11 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       <div className="bg-[#FFFCF5] min-h-screen font-sans pb-24">
         <div className="bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-10 lg:px-16">
-            <UMKMProfileHeader umkm={umkm} averageRating={averageRating} />
+            <UMKMProfileHeader
+              umkm={umkm}
+              averageRating={averageRating}
+              onReviewClick={this.handleOpenReviewModal}
+            />
           </div>
         </div>
 
@@ -305,7 +321,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 mt-8 md:mt-10">
           {filteredItems.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center bg-white rounded-[2rem] border-2 border-dashed border-gray-200">
+            <div className="py-20 flex flex-col items-center justify-center bg-white rounded-4xl border-2 border-dashed border-gray-200">
               <svg
                 className="w-16 h-16 text-gray-300 mb-4"
                 fill="none"
@@ -389,9 +405,16 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
           onUpdateNote={this.handleUpdateNote}
           onRemoveItem={this.handleRemoveItem}
         />
+
+        <ReviewModal
+          isOpen={isReviewModalOpen}
+          umkmId={umkm.id}
+          onClose={this.handleCloseReviewModal}
+        />
       </div>
     );
   }
 }
 
-export default withRouter(ProductDetailPage);
+const ProductDetailWithRouter = withRouter(ProductDetailPage);
+export default ProductDetailWithRouter;

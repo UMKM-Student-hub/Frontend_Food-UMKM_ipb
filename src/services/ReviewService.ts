@@ -20,4 +20,8 @@ export class ReviewService extends ApiService {
   async getUMKMReviews(): Promise<Review[]> {
     return this.get<Review[]>("/reviews/umkm/my");
   }
+
+  async getUMKMPublicReviews(umkmId: number): Promise<Review[]> {
+    return this.get<Review[]>(`/reviews/umkm/${umkmId}`);
+  }
 }

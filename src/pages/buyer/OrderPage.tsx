@@ -90,6 +90,20 @@ export class MyOrdersPage extends Component<
     }
   };
 
+  private handleMarkDone = async (orderId: number): Promise<void> => {
+    if (!window.confirm("Apakah kamu sudah menerima pesanan ini?")) return;
+
+    this.setState({ isLoading: true });
+    try {
+      await this.orderService.markOrderDone(orderId);
+      await this.fetchData();
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Gagal menyelesaikan pesanan.";
+      this.setState({ error: errorMessage, isLoading: false });
+    }
+  };
+
   render() {
     const { orders, umkmMap, productImageMap, isLoading, error } = this.state;
 
@@ -119,7 +133,7 @@ export class MyOrdersPage extends Component<
 
     return (
       <div className="min-h-screen bg-[#F8F9FA] pb-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-10 lg:px-16 py-10 md:py-14">
           <header className="mb-10 text-center md:text-left">
             <h1 className="text-3xl md:text-4xl font-black text-[#1B2B65] tracking-wide mb-2">
               Pesanan Saya
@@ -143,13 +157,14 @@ export class MyOrdersPage extends Component<
               </a>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-5">
               {orders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
                   umkmName={umkmMap[order.umkm_id] || "UMKM Tidak Dikenal"}
                   imageUrlMap={productImageMap}
+                  onMarkDone={this.handleMarkDone}
                 />
               ))}
             </div>
