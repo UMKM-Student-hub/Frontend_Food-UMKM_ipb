@@ -7,6 +7,8 @@ export interface OrderItem {
   menu_name: string;
   quantity: number;
   unit_price: number;
+  subtotal: number;
+  notes: string;
 }
 
 export interface Order {
@@ -16,9 +18,11 @@ export interface Order {
   items: OrderItem[];
   notes: string;
   status: OrderStatus;
+  payment_method: string;
+  payment_proof_url: string | null;
   rejection_reason: string | null;
   pickup_schedule: string | null;
-  queue_number: string;
+  queue_number: string | null;
   total_price: number;
   created_at: string;
 }
@@ -26,11 +30,11 @@ export interface Order {
 export interface CartItem {
   menuItem: MenuItem;
   quantity: number;
+  note?: string;
 }
 
-export interface CreateOrderRequest {
-  umkm_id: number;
-  items: { menu_item_id: number; quantity: number }[];
-  notes: string;
-  pickup_schedule: string | null;
+export interface OrderItemPayload {
+  menu_item_id: number;
+  quantity: number;
+  note: string;
 }

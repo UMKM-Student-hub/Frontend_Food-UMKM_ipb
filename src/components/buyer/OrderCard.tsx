@@ -1,16 +1,10 @@
-import React, { type ChangeEvent } from 'react';
-import { type Order } from '../../domain/Order';
-import { OrderStatus } from '../../domain/enums';
-import { ReviewService } from '../../services/ReviewService';
+import { Component } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import type { Order } from "../../domain/Order";
+import { OrderStatus } from "../../domain/enums";
+import { ReviewService } from "../../services/ReviewService";
 
-interface OrderCardProps {
-  order: Order;
-  umkmName: string; // Didapat dari parent (CatalogService)
-  imageUrl: string; // Didapat dari parent (berdasarkan menu_item_id)
-  initialHasReviewed?: boolean; // Untuk mengecek apakah order ini sudah pernah diulas sebelumnya
-}
-
-interface OrderCardState {
+interface ItemReviewState {
   rating: number;
   hoverRating: number;
   comment: string;
@@ -19,233 +13,390 @@ interface OrderCardState {
   error: string | null;
 }
 
-export class OrderCard extends React.Component<OrderCardProps, OrderCardState> {
-  private reviewService: ReviewService;
+interface OrderCardProps {
+  order: Order;
+  umkmName: string;
+  imageUrlMap: Record<number, string>;
+  initialReviewedMenuIds?: number[];
+  onMarkDone?: (orderId: number) => void;
+}
+
+interface OrderCardState {
+  itemReviews: Record<number, ItemReviewState>;
+}
+
+export class OrderCard extends Component<OrderCardProps, OrderCardState> {
+  private reviewService = new ReviewService();
 
   constructor(props: OrderCardProps) {
     super(props);
-    this.reviewService = new ReviewService();
-    this.state = {
-      rating: 0,
-      hoverRating: 0,
-      comment: '',
-      isSubmitting: false,
-      isReviewed: props.initialHasReviewed || false,
-      error: null,
-    };
+
+    const itemReviews: Record<number, ItemReviewState> = {};
+    const reviewedIds = props.initialReviewedMenuIds || [];
+
+    if (props.order.items) {
+      props.order.items.forEach((item) => {
+        itemReviews[item.menu_item_id] = {
+          rating: 0,
+          hoverRating: 0,
+          comment: "",
+          isSubmitting: false,
+          isReviewed: reviewedIds.includes(item.menu_item_id),
+          error: null,
+        };
+      });
+    }
+
+    this.state = { itemReviews };
   }
 
-  // --- Utility Formatters ---
   private formatRupiah(amount: number): string {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
-    }).format(amount);
+      maximumFractionDigits: 0,
+    })
+      .format(amount)
+      .replace("Rp", "Rp ");
   }
 
   private formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).format(date);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
   }
 
-  // --- Handlers untuk Form Review ---
-  private handleStarClick = (rating: number): void => {
-    this.setState({ rating, error: null });
+  private getFullImageUrl(path: string): string | null {
+    if (!path) return null;
+    return path.startsWith("/") ? `http://localhost:8000${path}` : path;
+  }
+
+  private handleStarClick = (menuItemId: number, value: number) => {
+    const current = this.state.itemReviews[menuItemId];
+    if (!current || current.isSubmitting || current.isReviewed) return;
+
+    this.setState((prev) => ({
+      itemReviews: {
+        ...prev.itemReviews,
+        [menuItemId]: {
+          ...prev.itemReviews[menuItemId],
+          rating: value,
+          error: null,
+        },
+      },
+    }));
   };
 
-  private handleStarHover = (hoverRating: number): void => {
-    this.setState({ hoverRating });
+  private handleStarHover = (menuItemId: number, value: number) => {
+    const current = this.state.itemReviews[menuItemId];
+    if (!current || current.isSubmitting || current.isReviewed) return;
+
+    this.setState((prev) => ({
+      itemReviews: {
+        ...prev.itemReviews,
+        [menuItemId]: { ...prev.itemReviews[menuItemId], hoverRating: value },
+      },
+    }));
   };
 
-  private handleCommentChange = (e: ChangeEvent<HTMLTextAreaElement>): void => {
-    this.setState({ comment: e.target.value });
+  private handleStarLeave = (menuItemId: number) => {
+    const current = this.state.itemReviews[menuItemId];
+    if (!current || current.isSubmitting || current.isReviewed) return;
+
+    this.setState((prev) => ({
+      itemReviews: {
+        ...prev.itemReviews,
+        [menuItemId]: { ...prev.itemReviews[menuItemId], hoverRating: 0 },
+      },
+    }));
   };
 
-  private handleSubmitReview = async (): Promise<void> => {
-    const { rating, comment } = this.state;
-    const { order } = this.props;
+  private handleCommentChange = (
+    menuItemId: number,
+    e: ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const { value } = e.target;
+    this.setState((prev) => ({
+      itemReviews: {
+        ...prev.itemReviews,
+        [menuItemId]: {
+          ...prev.itemReviews[menuItemId],
+          comment: value,
+          error: null,
+        },
+      },
+    }));
+  };
 
-    if (rating === 0) {
-      this.setState({ error: 'Mohon berikan rating bintang terlebih dahulu.' });
+  private handleSubmitReview = async (menuItemId: number, e: FormEvent) => {
+    e.preventDefault();
+    const current = this.state.itemReviews[menuItemId];
+    if (!current || current.rating === 0) {
+      this.setState((prev) => ({
+        itemReviews: {
+          ...prev.itemReviews,
+          [menuItemId]: {
+            ...prev.itemReviews[menuItemId],
+            error: "Pilih bintang penilaian terlebih dahulu.",
+          },
+        },
+      }));
       return;
     }
 
-    this.setState({ isSubmitting: true, error: null });
+    this.setState((prev) => ({
+      itemReviews: {
+        ...prev.itemReviews,
+        [menuItemId]: {
+          ...prev.itemReviews[menuItemId],
+          isSubmitting: true,
+          error: null,
+        },
+      },
+    }));
 
     try {
       await this.reviewService.submitReview({
-        order_id: order.id,
-        rating,
-        comment,
+        order_id: this.props.order.id,
+        menu_item_id: menuItemId,
+        rating: current.rating,
+        comment: current.comment.trim() || undefined,
       });
-      // Jika sukses, ubah state UI agar form hilang dan hanya tampil badge "Selesai"
-      this.setState({ isReviewed: true });
-    } catch (err: any) {
-      this.setState({ error: err.message || 'Gagal mengirim ulasan.' });
-    } finally {
-      this.setState({ isSubmitting: false });
+
+      this.setState((prev) => ({
+        itemReviews: {
+          ...prev.itemReviews,
+          [menuItemId]: {
+            ...prev.itemReviews[menuItemId],
+            isReviewed: true,
+            isSubmitting: false,
+          },
+        },
+      }));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal mengirim ulasan.";
+      this.setState((prev) => ({
+        itemReviews: {
+          ...prev.itemReviews,
+          [menuItemId]: {
+            ...prev.itemReviews[menuItemId],
+            error: msg,
+            isSubmitting: false,
+          },
+        },
+      }));
     }
   };
 
-  // --- Render Helpers ---
   private renderStatusBadge(status: OrderStatus) {
-    let bgColor = 'bg-gray-500';
-    let label: string = status; // <--- Tambahkan ": string" di sini
+    const statusConfig: Record<
+      string,
+      { bg: string; text: string; label: string }
+    > = {
+      [OrderStatus.PENDING]: {
+        bg: "bg-gray-200",
+        text: "text-gray-700",
+        label: "Menunggu",
+      },
+      [OrderStatus.CONFIRMED]: {
+        bg: "bg-[#1B2B65]",
+        text: "text-white",
+        label: "Dalam Proses",
+      },
+      [OrderStatus.PROCESSING]: {
+        bg: "bg-[#1B2B65]",
+        text: "text-white",
+        label: "Dalam Proses",
+      },
+      [OrderStatus.READY]: {
+        bg: "bg-blue-500",
+        text: "text-white",
+        label: "Siap Diambil",
+      },
+      [OrderStatus.DONE]: {
+        bg: "bg-[#4CAF50]",
+        text: "text-white",
+        label: "Selesai",
+      },
+      [OrderStatus.CANCELLED]: {
+        bg: "bg-[#F44336]",
+        text: "text-white",
+        label: "Dibatalkan",
+      },
+    };
 
-    switch (status) {
-      case OrderStatus.PENDING:
-        bgColor = 'bg-yellow-500';
-        label = 'Menunggu Konfirmasi';
-        break;
-      case OrderStatus.CONFIRMED:
-      case OrderStatus.PROCESSING:
-        bgColor = 'bg-[#0c2368]'; // Biru Dongker dari mockup
-        label = 'Dalam Proses';
-        break;
-      case OrderStatus.READY:
-        bgColor = 'bg-blue-500';
-        label = 'Siap Diambil';
-        break;
-      case OrderStatus.DONE:
-        bgColor = 'bg-[#39B54A]'; // Hijau dari mockup
-        label = 'Selesai';
-        break;
-      case OrderStatus.CANCELLED:
-        bgColor = 'bg-red-600';
-        label = 'Dibatalkan';
-        break;
-    }
+    const config = statusConfig[status] || statusConfig[OrderStatus.PENDING];
 
     return (
-      <div className={`${bgColor} text-white font-semibold px-6 py-2 rounded-full text-sm shadow-sm whitespace-nowrap`}>
-        {label}
-      </div>
+      <span
+        className={`px-6 py-2.5 rounded-full font-bold text-sm tracking-wide shadow-sm ${config.bg} ${config.text}`}
+      >
+        {config.label}
+      </span>
     );
   }
 
-  private renderReviewForm() {
-    const { rating, hoverRating, comment, isSubmitting, error } = this.state;
+  private renderReviewForm(menuItemId: number) {
+    const current = this.state.itemReviews[menuItemId];
+    if (!current || current.isReviewed) return null;
 
     return (
-      <div className="flex flex-col w-full md:w-3/5 md:pl-8 mt-6 md:mt-0">
-        <h4 className="text-[#0c2368] font-bold mb-2">Gimana Rasanya?</h4>
-        
-        {/* Star Rating Area */}
-        <div className="flex gap-2 mb-4" onMouseLeave={() => this.handleStarHover(0)}>
-          {[1, 2, 3, 4, 5].map((star) => {
-            const isFilled = star <= (hoverRating || rating);
-            return (
-              <button
-                key={star}
-                type="button"
-                onClick={() => this.handleStarClick(star)}
-                onMouseEnter={() => this.handleStarHover(star)}
-                className="focus:outline-none transition-transform hover:scale-110"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill={isFilled ? '#FFB300' : 'none'}
-                  stroke="#FFB300"
-                  strokeWidth="2"
-                  className="w-10 h-10"
-                >
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </button>
-            );
-          })}
+      <form
+        onSubmit={(e) => this.handleSubmitReview(menuItemId, e)}
+        className="flex flex-col mt-4 pt-4 border-t border-gray-100/50"
+      >
+        <span className="text-[#1B2B65] font-extrabold text-[15px] mb-2">
+          Gimana Rasanya?
+        </span>
+        <div className="flex gap-1 mb-3">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <svg
+              key={star}
+              onClick={() => this.handleStarClick(menuItemId, star)}
+              onMouseEnter={() => this.handleStarHover(menuItemId, star)}
+              onMouseLeave={() => this.handleStarLeave(menuItemId)}
+              className={`w-9 h-9 cursor-pointer transition-all duration-200 hover:scale-110 ${
+                (current.hoverRating || current.rating) >= star
+                  ? "text-[#FFB20E]"
+                  : "text-transparent stroke-[#FFB20E] stroke-2"
+              }`}
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+              />
+            </svg>
+          ))}
         </div>
 
-        {/* Komentar (Warna Kuning/Orange sesuai Mockup) */}
         <textarea
-          rows={3}
-          value={comment}
-          onChange={this.handleCommentChange}
-          disabled={isSubmitting}
+          value={current.comment}
+          onChange={(e) => this.handleCommentChange(menuItemId, e)}
+          disabled={current.isSubmitting}
           placeholder="Tuliskan pengalaman kamu, apa yang perlu ditingkatkan?"
-          className="w-full bg-[#FFB300] text-white placeholder-white/90 rounded-2xl p-4 focus:outline-none resize-none disabled:opacity-70 shadow-inner"
+          className="w-full text-sm rounded-2xl px-5 py-4 bg-[#FFB20E] text-white placeholder-white/80 focus:outline-none resize-none shadow-sm"
+          rows={3}
         />
 
-        {error && <p className="text-red-500 text-sm mt-2 font-medium">{error}</p>}
+        {current.error && (
+          <span className="text-red-500 text-xs font-bold mt-2">
+            {current.error}
+          </span>
+        )}
 
-        {/* Tombol Kirim */}
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={this.handleSubmitReview}
-            disabled={isSubmitting}
-            className="bg-[#0c2368] hover:bg-[#0a1b52] text-white font-semibold px-6 py-2 rounded-xl transition-colors disabled:bg-gray-400 shadow-md"
-          >
-            {isSubmitting ? 'Mengirim...' : 'Kirim Ulasan'}
-          </button>
-        </div>
-      </div>
+        <button
+          type="submit"
+          disabled={current.isSubmitting || current.rating === 0}
+          className="bg-[#1B2B65] hover:bg-[#102A71] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold px-8 py-2.5 rounded-xl transition-all shadow-md mt-4 self-end"
+        >
+          {current.isSubmitting ? "Mengirim..." : "Kirim Ulasan"}
+        </button>
+      </form>
     );
   }
 
   render() {
-    const { order, umkmName, imageUrl } = this.props;
-    const { isReviewed } = this.state;
-    
-    // Ambil item pertama dari array order items untuk ditampilkan representasinya
-    const firstItem = order.items[0];
-    const isMultipleItems = order.items.length > 1;
-    const displayMenuName = isMultipleItems 
-      ? `${firstItem?.menu_name} (+${order.items.length - 1} lainnya)`
-      : firstItem?.menu_name || 'Item tidak diketahui';
-
-    // Logika Kapan Menampilkan Form Review
-    // Muncul JIKA status DONE DAN belum pernah di-review
-    const showReviewForm = order.status === OrderStatus.DONE && !isReviewed;
+    const { order, umkmName, imageUrlMap, onMarkDone } = this.props;
+    const showReviewSection = order.status === OrderStatus.DONE;
 
     return (
-      <div className="w-full bg-[#F8F9FA] border border-gray-200 rounded-3xl p-6 md:p-8 flex flex-col relative shadow-sm hover:shadow-md transition-shadow">
-        
-        {/* Tanggal Pojok Kanan Atas */}
-        <div className="absolute top-6 right-6 md:right-8 text-sm text-gray-500 font-medium">
-          {this.formatDate(order.created_at)}
-        </div>
-
-        <div className="flex flex-col md:flex-row w-full justify-between items-start md:items-center">
-          
-          {/* Sisi Kiri: Info UMKM & Makanan */}
-          <div className="flex flex-col flex-1">
-            <h3 className="text-[#0c2368] text-xl font-extrabold mb-4">{umkmName}</h3>
-            
-            <div className="flex flex-row items-center gap-6">
-              <img
-                src={imageUrl || '/images/default-food.png'}
-                alt={displayMenuName}
-                className="w-24 h-24 object-cover rounded-2xl shadow-sm border border-gray-100"
-              />
-              <div className="flex flex-col justify-center text-gray-800">
-                <p className="font-semibold text-lg">{displayMenuName}</p>
-                <p className="text-gray-600 font-medium mt-1">{this.formatRupiah(order.total_price)}</p>
-              </div>
-            </div>
+      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col mb-4 hover:shadow-md transition-shadow">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-50 pb-4">
+          <div>
+            <h3 className="text-[#1B2B65] text-lg font-extrabold tracking-wide mb-1">
+              {umkmName}
+            </h3>
+            <span className="text-sm font-medium text-gray-400">
+              {this.formatDate(order.created_at)}
+            </span>
           </div>
 
-          {/* Sisi Kanan: Form Review ATAU Badge Status */}
-          {showReviewForm ? (
-            <>
-              {/* Render Form Review di tengah */}
-              {this.renderReviewForm()}
-              {/* Tetap tampilkan Badge Selesai di ujung kanan sesuai mockup */}
-              <div className="hidden md:block ml-6 self-center">
-                {this.renderStatusBadge(order.status)}
-              </div>
-            </>
-          ) : (
-            <div className="mt-6 md:mt-0 md:ml-auto">
-              {this.renderStatusBadge(order.status)}
-            </div>
-          )}
+          <div className="self-end md:self-auto shrink-0 mt-2 md:mt-0">
+            {order.status === OrderStatus.READY && onMarkDone ? (
+              <button
+                onClick={() => onMarkDone(order.id)}
+                className="px-6 py-2.5 rounded-full font-bold text-sm tracking-wide shadow-md bg-blue-500 hover:bg-blue-600 text-white transition-all active:scale-95 focus:outline-none"
+              >
+                Pesanan Diterima
+              </button>
+            ) : (
+              this.renderStatusBadge(order.status)
+            )}
+          </div>
+        </div>
 
+        <div className="flex flex-col gap-8">
+          {order.items &&
+            order.items.map((item) => {
+              const itemImg = imageUrlMap ? imageUrlMap[item.menu_item_id] : "";
+              const photoUrl = this.getFullImageUrl(itemImg || "");
+
+              return (
+                <div
+                  key={item.id || item.menu_item_id}
+                  className="flex flex-col"
+                >
+                  <div className="flex items-start md:items-center gap-5 w-full">
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gray-50 shrink-0 border border-gray-100 shadow-sm relative">
+                      {photoUrl ? (
+                        <img
+                          src={photoUrl}
+                          alt={item.menu_name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.outerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100"><span class="text-gray-300 text-xs font-bold">NO IMG</span></div>`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                          <span className="text-gray-300 text-xs font-bold">
+                            NO IMG
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col flex-1">
+                      <p className="font-bold text-[#1B2B65] text-lg leading-tight mb-1">
+                        {item.menu_name}
+                      </p>
+
+                      {/* ELEMEN BARU UNTUK MERENDER CATATAN PESANAN */}
+                      {item.notes && item.notes.trim() !== "" && (
+                        <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 w-fit mb-1.5">
+                          <p className="text-gray-500 text-xs font-medium italic">
+                            <span className="font-bold mr-1">Catatan:</span>
+                            {item.notes}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-gray-500 font-medium text-sm">
+                          Qty: {item.quantity}x
+                        </span>
+                        <span className="text-gray-300 text-sm">•</span>
+                        <span className="text-gray-800 font-extrabold text-sm">
+                          {this.formatRupiah(item.unit_price * item.quantity)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {showReviewSection &&
+                    this.renderReviewForm(item.menu_item_id)}
+                </div>
+              );
+            })}
         </div>
       </div>
     );
