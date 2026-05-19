@@ -1,6 +1,6 @@
 import { Component } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import type { MenuItem, MenuItemCreateRequest } from "../../domain/MenuItem";
+import type { MenuItem } from "../../domain/MenuItem";
 import { ProductCategory } from "../../domain/enums";
 
 interface ProductFormModalProps {
@@ -9,7 +9,8 @@ interface ProductFormModalProps {
   initialData: MenuItem | null;
   isSubmitting: boolean;
   onClose: () => void;
-  onSave: (payload: MenuItemCreateRequest, id?: number) => void;
+  // Perhatikan: Payload sekarang adalah FormData, bukan MenuItemCreateRequest
+  onSave: (payload: FormData, id?: number) => void;
 }
 
 interface ProductFormModalState {
@@ -18,7 +19,8 @@ interface ProductFormModalState {
   stock: string;
   category: string;
   description: string;
-  photo_url: string;
+  photo_file: File | null; // Untuk menyimpan file fisik
+  preview_url: string; // Untuk preview gambar di UI
 }
 
 const INITIAL_STATE: ProductFormModalState = {
@@ -27,7 +29,8 @@ const INITIAL_STATE: ProductFormModalState = {
   stock: "",
   category: "",
   description: "",
-  photo_url: "",
+  photo_file: null,
+  preview_url: "",
 };
 
 export class ProductFormModal extends Component<
@@ -39,9 +42,7 @@ export class ProductFormModal extends Component<
     this.state = { ...INITIAL_STATE };
   }
 
-  // Lifecycle Method: Menyinkronkan props dengan state lokal ketika modal dibuka
   componentDidUpdate(prevProps: ProductFormModalProps) {
-    // Jika modal baru saja dibuka
     if (this.props.isOpen && !prevProps.isOpen) {
       if (this.props.mode === "edit" && this.props.initialData) {
         const { name, price, stock, category, description, photo_url } =
@@ -51,17 +52,17 @@ export class ProductFormModal extends Component<
           price: price.toString(),
           stock: stock.toString(),
           category,
-          description,
-          photo_url: photo_url || "",
+          description: description || "",
+          photo_file: null,
+          preview_url: photo_url || "", // Tampilkan gambar lama jika ada
         });
       } else {
-        // Mode 'add', reset ke form kosong
         this.setState({ ...INITIAL_STATE });
       }
     }
   }
 
-  // Method untuk menangani perubahan pada Input & Select
+  // Handler untuk Input Teks & Select biasa
   private handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ): void => {
@@ -72,48 +73,62 @@ export class ProductFormModal extends Component<
     >);
   };
 
-  // Method untuk menangani proses Submit Form
+  // Handler KHUSUS untuk Input File (Gambar)
+  private handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+
+      // Buat URL sementara untuk preview di dalam browser
+      const preview_url = URL.createObjectURL(file);
+      this.setState({ photo_file: file, preview_url });
+    }
+  };
+
   private handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
 
-    const { name, price, stock, category, description, photo_url } = this.state;
+    const { name, price, stock, category, description, photo_file } =
+      this.state;
     const { mode, initialData, onSave } = this.props;
 
-    // Validasi data (Best Practice Frontend Validation)
     if (!name || !price || !stock || !category) {
       alert("Harap lengkapi semua field yang wajib!");
       return;
     }
 
-    const payload: MenuItemCreateRequest = {
-      name,
-      price: Number(price),
-      stock: Number(stock),
-      category: category as ProductCategory,
-      description,
-      photo_url: photo_url || undefined, // undefined jika string kosong
-    };
+    // --- BUNGKUS DATA KE DALAM FORMDATA ---
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("price", price);
+    formData.append("stock", stock);
+    formData.append("category", category);
+
+    if (description) formData.append("description", description);
+
+    // Jika ada file foto yang dipilih, masukkan ke form
+    if (photo_file) {
+      formData.append("photo", photo_file);
+    }
 
     if (mode === "edit" && initialData) {
-      onSave(payload, initialData.id);
+      onSave(formData, initialData.id);
     } else {
-      onSave(payload);
+      onSave(formData);
     }
   };
 
   render() {
     const { isOpen, onClose, isSubmitting } = this.props;
-    const { name, price, stock, category, description, photo_url } = this.state;
+    const { name, price, stock, category, description, preview_url } =
+      this.state;
 
-    // Jika tidak sedang dibuka, jangan render apapun
     if (!isOpen) return null;
 
     return (
-      <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
-        {/* Container Utama Modal - Warna Kuning UniBites */}
-        <div className="bg-[#FFD13B] w-full max-w-4xl rounded-4xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-          {/* Tombol Tutup (X) */}
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
+        <div className="bg-[#FFD13B] w-full max-w-4xl rounded-[32px] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
           <button
+            type="button"
             onClick={onClose}
             className="absolute top-6 right-8 text-[#1B2B65] text-4xl font-light hover:text-white transition-colors z-10"
             aria-label="Tutup"
@@ -125,44 +140,64 @@ export class ProductFormModal extends Component<
             onSubmit={this.handleSubmit}
             className="overflow-y-auto px-10 py-10"
           >
-            {/* Bagian Atas: Upload Foto */}
+            {/* --- Bagian Atas: Upload Foto dengan Preview --- */}
             <div className="flex flex-col items-center mb-10">
-              <div className="w-24 h-24 bg-white rounded-full flex justify-center items-center shadow-sm mb-4">
-                <svg
-                  className="w-10 h-10 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-[#1B2B65] font-bold text-lg mb-2">
+              <label
+                htmlFor="photo_upload"
+                className="cursor-pointer w-28 h-28 bg-white rounded-full flex justify-center items-center shadow-sm mb-4 hover:scale-105 transition-transform overflow-hidden relative border-4 border-white group"
+                title="Klik untuk memilih foto"
+              >
+                {preview_url ? (
+                  // Tampilkan Preview Foto
+                  <>
+                    <img
+                      src={preview_url}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-xs font-bold">Ubah</span>
+                    </div>
+                  </>
+                ) : (
+                  // Tampilkan Ikon Kamera Jika Kosong
+                  <svg
+                    className="w-10 h-10 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                )}
+              </label>
+
+              <h2 className="text-[#1B2B65] font-bold text-lg mb-1">
                 Upload Photo Menu
               </h2>
 
+              {/* Input file yang disembunyikan */}
               <input
-                type="text"
-                name="photo_url"
-                value={photo_url}
-                onChange={this.handleInputChange}
-                placeholder="https://link-gambar.com/foto.jpg (opsional)"
-                className="w-72 px-4 py-2 bg-white/80 border-none rounded-lg text-sm focus:ring-2 focus:ring-[#1B2B65] text-center"
+                id="photo_upload"
+                type="file"
+                accept="image/*" // Hanya menerima file gambar
+                onChange={this.handleFileChange}
+                className="hidden"
               />
             </div>
 
-            {/* Bagian Bawah: Grid Form 2 Kolom */}
+            {/* --- Bagian Bawah: Grid Form 2 Kolom --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 text-[#1B2B65] font-bold">
               {/* Kolom Kiri */}
               <div className="flex flex-col gap-6">
@@ -185,7 +220,6 @@ export class ProductFormModal extends Component<
                   >
                     Jenis Makanan
                   </label>
-                  {/* Wrapper relative untuk menempatkan panah kustom */}
                   <div className="relative">
                     <select
                       id="category_select"
@@ -193,7 +227,6 @@ export class ProductFormModal extends Component<
                       name="category"
                       value={category}
                       onChange={this.handleInputChange}
-                      // Tambahkan appearance-none dan cursor-pointer
                       className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal appearance-none cursor-pointer"
                     >
                       <option value="" disabled>
@@ -205,8 +238,6 @@ export class ProductFormModal extends Component<
                         </option>
                       ))}
                     </select>
-
-                    {/* Panah kustom buatan sendiri agar konsisten di semua browser */}
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-[#1B2B65]">
                       <svg
                         className="w-5 h-5 opacity-70"

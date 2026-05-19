@@ -28,7 +28,6 @@ export default class SellerLayout extends Component<
     this.setState({ isMenuOpen: false });
   };
 
-  // Helper untuk styling menu Desktop (Menyala kuning jika sedang aktif)
   private getNavClass = ({ isActive }: { isActive: boolean }) =>
     `font-semibold tracking-wide transition-colors duration-200 ${
       isActive
@@ -36,7 +35,6 @@ export default class SellerLayout extends Component<
         : "text-white hover:text-gray-300"
     }`;
 
-  // Helper untuk styling menu Mobile (Menyala kuning jika sedang aktif)
   private getMobileNavClass = ({ isActive }: { isActive: boolean }) =>
     `text-xl font-semibold tracking-wide transition-colors duration-200 ${
       isActive ? "text-[#FFD13B]" : "text-white hover:text-gray-300"
@@ -47,18 +45,16 @@ export default class SellerLayout extends Component<
 
     return (
       <div className="min-h-screen bg-white flex flex-col font-sans">
-        {/* Navbar Khusus Seller (Warna dominan biru: #1B2B65) */}
         <nav className="bg-[#1B2B65] sticky top-0 z-50 shadow-md w-full">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
-              {/* Kiri: Logo & Nama Aplikasi */}
               <Link
                 to="/seller"
                 className="flex items-center gap-4 hover:opacity-90 transition-opacity"
                 onClick={this.closeMenu}
               >
                 <img
-                  src="/images/logo-unibites.png"
+                  src="/images/logo-navbar.png"
                   alt="UniBites Mascot"
                   className="h-14 w-auto object-contain"
                 />

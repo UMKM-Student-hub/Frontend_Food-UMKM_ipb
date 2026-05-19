@@ -8,62 +8,86 @@ interface ProductTableRowProps {
 }
 
 export class ProductTableRow extends Component<ProductTableRowProps> {
-  // Method untuk memformat harga menjadi Rupiah
   private formatRupiah = (number: number): string => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("id-ID", {
       style: "currency",
-      currency: "USD", // Pada Figma terlihat menggunakan simbol $ pada beberapa desain, namun jika wajib Rp, ubah menjadi id-ID dan IDR
-    })
-      .format(number)
-      .replace("$", "$ "); // Sesuaikan format dengan desain Figma
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(number);
   };
 
   render() {
     const { product, onEdit, onDelete } = this.props;
 
+    const imageUrl = product.photo_url?.startsWith("/")
+      ? `http://localhost:8000${product.photo_url}`
+      : product.photo_url;
+
     return (
-      <tr className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors bg-white">
-        {/* Kolom Foto */}
-        <td className="py-4 px-6">
-          <div className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center border border-gray-200 shadow-sm">
-            {product.photo_url ? (
-              <img
-                src={product.photo_url}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-gray-400 text-xs font-medium">
-                No Image
-              </span>
-            )}
+      <tr className="block md:table-row border-b border-gray-200 md:border-gray-100 hover:bg-gray-50/50 transition-colors bg-white p-4 md:p-0 mb-4 md:mb-0 rounded-2xl md:rounded-none shadow-sm md:shadow-none">
+        <td className="block md:table-cell py-2 md:py-4 px-2 md:px-6">
+          <div className="flex justify-center md:justify-start mb-4 md:mb-0">
+            <div className="w-32 h-32 md:w-16 md:h-16 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center border border-gray-200 shadow-sm">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-gray-400 text-xs font-medium">
+                  No Image
+                </span>
+              )}
+            </div>
           </div>
         </td>
 
-        {/* Kolom Nama Produk */}
-        <td className="py-4 px-6 font-medium text-gray-800">{product.name}</td>
-
-        {/* Kolom Jenis Makanan */}
-        <td className="py-4 px-6 text-gray-600 capitalize">
-          {product.category.replace("_", " ")}
+        <td className="flex md:table-cell justify-between items-center py-2 md:py-4 px-2 md:px-6 border-b border-gray-50 md:border-none">
+          <span className="md:hidden font-bold text-xs text-gray-500 uppercase tracking-wider">
+            Nama Produk
+          </span>
+          <span className="font-bold md:font-medium text-gray-800 text-right md:text-left text-base">
+            {product.name}
+          </span>
         </td>
 
-        {/* Kolom Harga */}
-        <td className="py-4 px-6 text-gray-800 font-medium">
-          {this.formatRupiah(product.price)}
+        <td className="flex md:table-cell justify-between items-center py-2 md:py-4 px-2 md:px-6 border-b border-gray-50 md:border-none">
+          <span className="md:hidden font-bold text-xs text-gray-500 uppercase tracking-wider">
+            Jenis Makanan
+          </span>
+          <span className="text-gray-600 capitalize text-right md:text-left font-medium md:font-normal">
+            {product.category.replace("_", " ")}
+          </span>
         </td>
 
-        {/* Kolom Stok */}
-        <td className="py-4 px-6 text-gray-600">{product.stock}</td>
+        <td className="flex md:table-cell justify-between items-center py-2 md:py-4 px-2 md:px-6 border-b border-gray-50 md:border-none">
+          <span className="md:hidden font-bold text-xs text-gray-500 uppercase tracking-wider">
+            Harga
+          </span>
+          <span className="text-gray-800 font-bold text-right md:text-left">
+            {this.formatRupiah(product.price)}
+          </span>
+        </td>
 
-        {/* Kolom Action */}
-        <td className="py-4 px-6 text-center">
-          <div className="flex items-center justify-center gap-2">
-            {/* Tombol Edit */}
+        <td className="flex md:table-cell justify-between items-center py-2 md:py-4 px-2 md:px-6 border-b border-gray-50 md:border-none">
+          <span className="md:hidden font-bold text-xs text-gray-500 uppercase tracking-wider">
+            Stok
+          </span>
+          <span className="text-gray-600 font-medium md:font-normal text-right md:text-left">
+            {product.stock}
+          </span>
+        </td>
+
+        <td className="flex md:table-cell justify-between items-center py-4 md:py-4 px-2 md:px-6 text-center mt-2 md:mt-0">
+          <span className="md:hidden font-bold text-xs text-gray-500 uppercase tracking-wider">
+            Aksi
+          </span>
+          <div className="flex items-center justify-end md:justify-center gap-3">
             <button
               onClick={() => onEdit(product)}
-              className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:border-[#1B2B65] hover:text-[#1B2B65] transition-colors"
-              title="Edit Produk"
+              className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-[#FFD13B] hover:border-[#FFD13B] hover:text-[#1B2B65] transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -80,11 +104,9 @@ export class ProductTableRow extends Component<ProductTableRowProps> {
               </svg>
             </button>
 
-            {/* Tombol Delete */}
             <button
               onClick={() => onDelete(product.id)}
-              className="p-2 border border-red-200 rounded-lg text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors"
-              title="Hapus Produk"
+              className="p-2 border border-red-200 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-colors"
             >
               <svg
                 className="w-5 h-5"

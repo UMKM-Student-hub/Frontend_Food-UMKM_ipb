@@ -12,6 +12,7 @@ export interface User {
 export interface AuthToken {
   access_token: string;
   token_type: string;
+  role: UserRole;
 }
 
 export interface AuthState {

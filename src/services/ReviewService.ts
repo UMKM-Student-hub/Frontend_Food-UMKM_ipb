@@ -1,10 +1,15 @@
 import { ApiService } from "./ApiService";
-import type { Review, ReviewCreateRequest } from "../domain/Review";
+import type { Review } from "../domain/Review";
+
+export interface ReviewCreateRequest {
+  order_id: number;
+  menu_item_id: number;
+  rating: number;
+  comment?: string;
+}
 
 export class ReviewService extends ApiService {
-  // --- Pembeli ---
   async submitReview(payload: ReviewCreateRequest): Promise<Review> {
-    // Menggunakan POST /reviews/
     return this.post<Review>("/reviews/", payload);
   }
 
@@ -12,7 +17,6 @@ export class ReviewService extends ApiService {
     return this.get<Review[]>(`/reviews/product/${menuItemId}`);
   }
 
-  // --- Penjual ---
   async getUMKMReviews(): Promise<Review[]> {
     return this.get<Review[]>("/reviews/umkm/my");
   }

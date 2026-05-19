@@ -1,17 +1,21 @@
-import React, { Component } from 'react';
-import type { MenuItem } from '../../domain/MenuItem';
+import { Component } from "react";
+import type { MouseEvent } from "react";
+import type { MenuItem } from "../../domain/MenuItem";
 
 interface MenuItemCardProps {
   item: MenuItem;
   onAddToCart: (item: MenuItem, quantity: number) => void;
-  onCardClick?: (item: MenuItem) => void; // Prop baru untuk membuka DetailProduk
+  onCardClick?: (item: MenuItem) => void;
 }
 
 interface MenuItemCardState {
   quantity: number;
 }
 
-export class MenuItemCard extends Component<MenuItemCardProps, MenuItemCardState> {
+export class MenuItemCard extends Component<
+  MenuItemCardProps,
+  MenuItemCardState
+> {
   constructor(props: MenuItemCardProps) {
     super(props);
     this.state = {
@@ -19,23 +23,29 @@ export class MenuItemCard extends Component<MenuItemCardProps, MenuItemCardState
     };
   }
 
-  private handleIncrement = (e: React.MouseEvent): void => {
-    e.stopPropagation(); // Cegah klik kartu terbuka
+  private handleIncrement = (e: MouseEvent<HTMLButtonElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
     const { item } = this.props;
     this.setState((prevState) => ({
-      quantity: prevState.quantity < item.stock ? prevState.quantity + 1 : prevState.quantity,
+      quantity:
+        prevState.quantity < item.stock
+          ? prevState.quantity + 1
+          : prevState.quantity,
     }));
   };
 
-  private handleDecrement = (e: React.MouseEvent): void => {
+  private handleDecrement = (e: MouseEvent<HTMLButtonElement>): void => {
+    e.preventDefault();
     e.stopPropagation();
     this.setState((prevState) => ({
       quantity: prevState.quantity > 1 ? prevState.quantity - 1 : 1,
     }));
   };
 
-  private handleAddToCart = (e: React.MouseEvent): void => {
-    e.stopPropagation(); // Cegah propagasi ke kartu
+  private handleAddToCart = (e: MouseEvent<HTMLButtonElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
     const { item, onAddToCart } = this.props;
     const { quantity } = this.state;
 
@@ -45,103 +55,160 @@ export class MenuItemCard extends Component<MenuItemCardProps, MenuItemCardState
     }
   };
 
-  private handleCardClick = (): void => {
+  private handleCardClick = (e: MouseEvent<HTMLDivElement>): void => {
+    e.preventDefault();
     const { item, onCardClick } = this.props;
     if (onCardClick) {
       onCardClick(item);
     }
   };
 
-  private formatPrice(price: number): string {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    })
-      .format(price)
-      .replace('Rp', '')
-      .trim();
+  private getFullImageUrl(path: string | null | undefined): string | null {
+    if (!path) return null;
+    return path.startsWith("/") ? `http://localhost:8000${path}` : path;
   }
 
   render() {
-    const { item } = this.props;
+    const { item, onCardClick } = this.props;
     const { quantity } = this.state;
 
     const isOutOfStock = item.stock === 0;
     const isUnavailable = !item.is_active || isOutOfStock;
 
+    const rawPhotoUrl = (item as any).photo_url || (item as any).photoUrl;
+    const photoUrl = this.getFullImageUrl(rawPhotoUrl);
+
     return (
       <div
         onClick={this.handleCardClick}
         className={`
-          flex flex-col w-full min-w-[250px] max-w-[300px] bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm
-          transition-all duration-200 hover:-translate-y-1 hover:shadow-md
-          ${isUnavailable ? 'opacity-60 grayscale' : ''}
-          ${this.props.onCardClick ? 'cursor-pointer' : ''}
+          flex flex-col w-full h-full bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm group
+          transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#FFB20E]
+          ${isUnavailable ? "opacity-60 grayscale" : ""}
+          ${onCardClick && !isUnavailable ? "cursor-pointer" : ""}
         `}
       >
-        {/* Gambar Produk */}
-        <div className="relative h-44 w-full bg-gray-100">
-          <img
-            src={item.photo_url || '/assets/default-food.jpg'}
-            alt={item.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+        <div className="relative h-40 sm:h-48 w-full bg-gray-50 overflow-hidden shrink-0">
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={item.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.outerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100 group-hover:scale-105 transition-transform duration-500"><span class="text-gray-400 font-bold text-xs uppercase px-4 text-center tracking-wider">Tanpa Gambar</span></div>`;
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 group-hover:scale-105 transition-transform duration-500">
+              <span className="text-gray-400 font-bold text-xs uppercase px-4 text-center tracking-wider">
+                Tanpa Gambar
+              </span>
+            </div>
+          )}
+
           {isOutOfStock && (
-            <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-md text-xs font-bold shadow-sm uppercase tracking-wider">
+            <div className="absolute top-3 right-3 bg-red-500/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-black shadow-sm uppercase tracking-widest z-10">
               Habis
             </div>
           )}
         </div>
 
-        {/* Info Produk */}
-        <div className="p-4 flex-grow flex flex-col text-center">
-          <p className="text-orange-500 font-bold text-[1.1rem] mb-1">
-            {this.formatPrice(item.price)}
-          </p>
-          <h3 className="text-slate-900 font-bold text-lg mb-1 truncate" title={item.name}>
-            {item.name}
-          </h3>
-          <p className="text-slate-500 text-xs leading-relaxed line-clamp-2" title={item.description}>
-            {item.description}
+        <div className="p-4 sm:p-5 grow flex flex-col items-start justify-between">
+          <div className="w-full">
+            <div className="flex justify-between items-start mb-2 gap-2">
+              <h3
+                className="text-[#1B2B65] font-extrabold text-lg leading-snug line-clamp-2 group-hover:text-[#FFB20E] transition-colors"
+                title={item.name}
+              >
+                {item.name}
+              </h3>
+            </div>
+            <p
+              className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4"
+              title={item.description}
+            >
+              {item.description || "Menu lezat pilihan dari kantin favoritmu."}
+            </p>
+          </div>
+
+          <p className="text-[#FFB20E] font-black text-xl mt-auto">
+            Rp {Number(item.price).toLocaleString("id-ID")}
           </p>
         </div>
 
-        {/* Aksi & Kuantitas */}
-        <div className="flex justify-between items-center p-3 border-t border-gray-100 bg-gray-50/50">
-          {/* Kontrol Kuantitas */}
-          <div className="flex items-center border-2 border-slate-900 rounded-full px-2 py-0.5 bg-white">
+        <div className="flex justify-between items-center p-4 pt-0 bg-white">
+          <div
+            className="flex items-center bg-gray-50 border border-gray-200 rounded-full px-1.5 py-1"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={this.handleDecrement}
               disabled={quantity <= 1 || isUnavailable}
               aria-label="Kurangi jumlah"
-              className="text-orange-500 text-xl font-medium px-2 pb-0.5 focus:outline-none disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-white rounded-full transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500 outline-none"
             >
-              &minus;
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3"
+                  d="M20 12H4"
+                />
+              </svg>
             </button>
-            <span className="text-slate-900 font-bold w-6 text-center select-none text-sm">
+
+            <span className="text-[#1B2B65] font-bold w-7 text-center select-none text-sm">
               {quantity}
             </span>
+
             <button
               onClick={this.handleIncrement}
               disabled={quantity >= item.stock || isUnavailable}
               aria-label="Tambah jumlah"
-              className="text-orange-500 text-xl font-medium px-2 pb-0.5 focus:outline-none disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-white rounded-full transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500 outline-none"
             >
-              &#43;
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
             </button>
           </div>
 
-          {/* Tombol Keranjang */}
           <button
             onClick={this.handleAddToCart}
             disabled={isUnavailable}
             aria-label="Tambah ke keranjang"
-            className="bg-slate-900 text-white rounded-full w-9 h-9 flex items-center justify-center focus:outline-none disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-slate-800 hover:shadow-md transition-all active:scale-95"
+            className="bg-[#1B2B65] text-white rounded-full w-12 h-12 flex items-center justify-center focus:outline-none disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-[#102A71] hover:shadow-lg transition-all active:scale-90"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+              />
             </svg>
           </button>
         </div>

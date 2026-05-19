@@ -1,14 +1,15 @@
 import React, { createContext, Component } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, ContextType } from "react";
 import { jwtDecode } from "jwt-decode";
-import type { User, AuthToken } from "../domain/User";
+import type { User } from "../domain/User";
 import { AuthService } from "../services/AuthService";
 
 export interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  loginAction: (authData: AuthToken) => Promise<void>;
+  isInitializing: boolean;
+  loginAction: (token: string) => Promise<void>;
   logoutAction: () => void;
 }
 
@@ -31,68 +32,62 @@ interface DecodedJwtPayload {
   exp?: number;
   sub?: string;
   role?: string;
-  name?: string;
-  email?: string;
 }
 
 export class AuthProvider extends Component<
   AuthProviderProps,
   AuthProviderState
 > {
-  private authService: AuthService;
+  private authService = new AuthService();
 
-  constructor(props: AuthProviderProps) {
-    super(props);
-    this.state = {
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isInitializing: true,
-    };
-    this.authService = new AuthService();
-  }
+  state: AuthProviderState = {
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    isInitializing: true,
+  };
 
-  componentDidMount() {
-    const storedToken = localStorage.getItem("access_token");
-    if (storedToken) {
-      this.restoreSession(storedToken);
+  async componentDidMount() {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      await this.restoreSession(token);
     } else {
       this.setState({ isInitializing: false });
     }
   }
 
-  restoreSession = async (token: string) => {
+  private restoreSession = async (token: string): Promise<void> => {
     try {
       const decoded = jwtDecode<DecodedJwtPayload>(token);
       const currentTime = Date.now() / 1000;
+
       if (decoded.exp && decoded.exp < currentTime) {
-        console.warn("Token expired, logging out...");
         this.logoutAction();
         return;
       }
 
       this.authService.setToken(token);
-
       const user = await this.authService.getMe();
 
       this.setState({
-        token: token,
-        user: user,
+        token,
+        user,
         isAuthenticated: true,
         isInitializing: false,
       });
     } catch (error) {
-      console.error("Sesi tidak valid atau user diblokir:", error);
       this.logoutAction();
     }
   };
 
-  loginAction = async (authData: AuthToken) => {
-    await this.restoreSession(authData.access_token);
+  loginAction = async (token: string): Promise<void> => {
+    this.setState({ isInitializing: true });
+    await this.restoreSession(token);
   };
 
-  logoutAction = () => {
+  logoutAction = (): void => {
     this.authService.clearAuth();
+    localStorage.removeItem("user_role");
     this.setState({
       user: null,
       token: null,
@@ -102,30 +97,27 @@ export class AuthProvider extends Component<
   };
 
   render() {
-    if (this.state.isInitializing) {
+    const { user, token, isAuthenticated, isInitializing } = this.state;
+
+    const contextValue: AuthContextType = {
+      user,
+      token,
+      isAuthenticated,
+      isInitializing,
+      loginAction: this.loginAction,
+      logoutAction: this.logoutAction,
+    };
+
+    if (isInitializing) {
       return (
-        <div
-          style={{
-            padding: "2rem",
-            textAlign: "center",
-            fontFamily: "sans-serif",
-          }}
-        >
+        <div className="flex justify-center items-center h-screen bg-gray-50 text-green-700 font-semibold">
           Memuat sesi UniBites...
         </div>
       );
     }
 
-    const value: AuthContextType = {
-      user: this.state.user,
-      token: this.state.token,
-      isAuthenticated: this.state.isAuthenticated,
-      loginAction: this.loginAction,
-      logoutAction: this.logoutAction,
-    };
-
     return (
-      <AuthContext.Provider value={value}>
+      <AuthContext.Provider value={contextValue}>
         {this.props.children}
       </AuthContext.Provider>
     );

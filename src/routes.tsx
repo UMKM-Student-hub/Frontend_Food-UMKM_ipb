@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import MainLayout from "./layouts/MainLayout.tsx";
 import SellerLayout from "./layouts/SellerLayout.tsx";
 import { SellerGuard } from "./guards/SellerGuard.tsx";
+import { BuyerGuard } from "./guards/BuyerGuard.tsx";
 
 const Loader = () => (
   <div className="flex justify-center items-center h-screen text-green-700">
@@ -11,20 +12,25 @@ const Loader = () => (
 );
 
 const HomePage = lazy(() => import("./pages/buyer/Home.tsx"));
-const DealsPage = lazy(() => import("./pages/buyer/DealsPage.tsx"));
 const ProfilePage = lazy(() => import("./pages/buyer/ProfilePage.tsx"));
-// Kita sesuaikan import-nya agar bisa membaca named export 'AuthPage' dari UserLoginRegister.tsx
-const AuthPage = lazy(() => 
-  import("./pages/auth/UserLoginRegister.tsx").then(module => ({ default: module.AuthPage }))
+const AuthPage = lazy(() =>
+  import("./pages/auth/UserLoginRegister.tsx").then((module) => ({
+    default: module.AuthPage,
+  })),
 );
-const ProductDetailPage = lazy(() => import("./pages/buyer/ProductDetailPage.tsx"));
-const MyOrdersPage = lazy(() => 
-  import("./pages/buyer/Pesanan.tsx").then(module => ({ default: module.MyOrdersPage }))
+const ProductDetailPage = lazy(
+  () => import("./pages/buyer/ProductDetailPage.tsx"),
 );
-const AdminLoginRegister = lazy(() => 
-  import("./pages/auth/AdminLoginRegister.tsx").then(module => ({ default: module.RegisterAdminPage }))
+const MyOrdersPage = lazy(() =>
+  import("./pages/buyer/OrderPage.tsx").then((module) => ({
+    default: module.MyOrdersPage,
+  })),
 );
-
+const AdminLoginRegister = lazy(() =>
+  import("./pages/auth/AdminLoginRegister.tsx").then((module) => ({
+    default: module.RegisterAdminPage,
+  })),
+);
 
 const SellerDashboardPage = lazy(
   () => import("./pages/seller/SellerDashboardPage.tsx"),
@@ -38,15 +44,12 @@ const IncomingOrdersPage = lazy(
 const PromoManagementPage = lazy(
   () => import("./pages/seller/PromoManagementPage.tsx"),
 );
+const SellerProfilePage = lazy(() => import("./pages/seller/ProfilePage.tsx"));
 
-// --- WRAPPER UNTUK CLASS COMPONENT ---
-// Wrapper ini berfungsi mengambil parameter URL (umkmId) menggunakan hook useParams
-// dan mengirimkannya sebagai props ke Class Component ProductDetailPage.
 const ProductDetailPageWrapper = () => {
   const params = useParams();
   return (
     <Suspense fallback={<Loader />}>
-      {/* Mengoper params ke komponen agar bisa diakses via this.props.params.umkmId */}
       <ProductDetailPage params={params} />
     </Suspense>
   );
@@ -65,7 +68,6 @@ const router = createBrowserRouter([
         path: "login",
         element: (
           <Suspense fallback={<Loader />}>
-            {/* Gunakan AuthPage yang baru */}
             <AuthPage />
           </Suspense>
         ),
@@ -74,31 +76,17 @@ const router = createBrowserRouter([
         path: "register",
         element: (
           <Suspense fallback={<Loader />}>
-            {/* Gunakan komponen yang sama untuk register, karena ada tab navigasinya */}
             <AuthPage />
           </Suspense>
         ),
       },
       {
-        path: "register-mitra", 
+        path: "register-mitra",
         element: (
           <Suspense fallback={<Loader />}>
             <AdminLoginRegister />
           </Suspense>
         ),
-      },
-      {
-        path: "my-orders", // Path sesuai spesifikasi dokumen 
-        element: (
-          <Suspense fallback={<Loader />}>
-            {/* Dibungkus BuyerGuard karena hanya boleh diakses mahasiswa (BUYER) 
-              sesuai aturan keamanan sistem [cite: 186, 506]
-            */}
-            <SellerGuard>
-              <MyOrdersPage />
-            </SellerGuard>
-          </Suspense>
-      ),
       },
       {
         path: "home",
@@ -108,18 +96,17 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
-      
-      // === RUTE BARU UNTUK HALAMAN DETAIL KANTIN ===
       {
         path: "catalog/:umkmId",
         element: <ProductDetailPageWrapper />,
       },
-      // =============================================
       {
-        path: "deals",
+        path: "my-orders",
         element: (
           <Suspense fallback={<Loader />}>
-            <DealsPage />
+            <BuyerGuard>
+              <MyOrdersPage />
+            </BuyerGuard>
           </Suspense>
         ),
       },
@@ -127,16 +114,21 @@ const router = createBrowserRouter([
         path: "profile",
         element: (
           <Suspense fallback={<Loader />}>
-            <ProfilePage />
+            <BuyerGuard>
+              <ProfilePage />
+            </BuyerGuard>
           </Suspense>
         ),
       },
     ],
   },
-
   {
     path: "/seller",
-    element: <SellerLayout />,
+    element: (
+      <SellerGuard>
+        <SellerLayout />
+      </SellerGuard>
+    ),
     children: [
       {
         index: true,
@@ -170,9 +162,16 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: "profile",
+        element: (
+          <Suspense fallback={<Loader />}>
+            <SellerProfilePage />
+          </Suspense>
+        ),
+      },
     ],
   },
-
   {
     path: "*",
     element: (

@@ -1,7 +1,6 @@
 import { Component } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import type { MenuItem } from "../../domain/MenuItem";
-import type { CreatePromoRequest } from "../../domain/Promotion";
 import { DiscountType } from "../../domain/enums";
 
 interface PromoFormModalProps {
@@ -9,13 +8,15 @@ interface PromoFormModalProps {
   myProducts: MenuItem[]; // Daftar produk untuk dropdown
   isSubmitting: boolean;
   onClose: () => void;
-  onSave: (payload: CreatePromoRequest) => void;
+  // Perhatikan: Payload diubah menjadi FormData untuk mendukung upload file
+  onSave: (payload: FormData) => void;
 }
 
 interface PromoFormModalState {
   menu_item_id: string;
   name: string;
-  photo_url: string;
+  photo_file: File | null;
+  preview_url: string;
   discount_type: DiscountType | "";
   discount_value: string;
   start_date: string;
@@ -26,7 +27,8 @@ interface PromoFormModalState {
 const INITIAL_STATE: PromoFormModalState = {
   menu_item_id: "",
   name: "",
-  photo_url: "",
+  photo_file: null,
+  preview_url: "",
   discount_type: "",
   discount_value: "",
   start_date: "",
@@ -60,13 +62,22 @@ export class PromoFormModal extends Component<
     >);
   };
 
+  // Handler khusus untuk input file (Upload Banner)
+  private handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const preview_url = URL.createObjectURL(file);
+      this.setState({ photo_file: file, preview_url, errorMessage: null });
+    }
+  };
+
   private handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
 
     const {
       menu_item_id,
       name,
-      photo_url,
+      photo_file,
       discount_type,
       discount_value,
       start_date,
@@ -121,18 +132,20 @@ export class PromoFormModal extends Component<
       return;
     }
 
-    // --- SUBMIT PAYLOAD ---
-    const payload: CreatePromoRequest = {
-      menu_item_id: Number(menu_item_id),
-      name,
-      photo_url: photo_url || undefined,
-      discount_type: discount_type as DiscountType,
-      discount_value: valueNum,
-      start_date,
-      end_date,
-    };
+    // --- BUNGKUS DATA KE DALAM FORMDATA ---
+    const formData = new FormData();
+    formData.append("menu_item_id", menu_item_id);
+    formData.append("name", name);
+    formData.append("discount_type", discount_type);
+    formData.append("discount_value", valueNum.toString());
+    formData.append("start_date", start_date);
+    formData.append("end_date", end_date);
 
-    onSave(payload);
+    if (photo_file) {
+      formData.append("photo", photo_file);
+    }
+
+    onSave(formData);
   };
 
   render() {
@@ -140,7 +153,7 @@ export class PromoFormModal extends Component<
     const {
       menu_item_id,
       name,
-      photo_url,
+      preview_url,
       discount_type,
       discount_value,
       start_date,
@@ -151,9 +164,9 @@ export class PromoFormModal extends Component<
     if (!isOpen) return null;
 
     return (
-      <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
         {/* Container Modal (Kuning UniBites) */}
-        <div className="bg-[#FFD13B] w-full max-w-4xl rounded-4xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="bg-[#FFD13B] w-full max-w-4xl rounded-[32px] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
           <button
             onClick={onClose}
             className="absolute top-6 right-8 text-[#1B2B65] text-4xl font-light hover:text-white transition-colors z-10"
@@ -168,37 +181,56 @@ export class PromoFormModal extends Component<
           >
             {/* --- Bagian Atas: Upload Foto Promo --- */}
             <div className="flex flex-col items-center mb-8">
-              <div className="w-24 h-24 bg-white rounded-full flex justify-center items-center shadow-sm mb-4">
-                <svg
-                  className="w-10 h-10 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
+              <label
+                htmlFor="promo_photo_upload"
+                className="cursor-pointer w-28 h-28 bg-white rounded-full flex justify-center items-center shadow-sm mb-4 hover:scale-105 transition-transform overflow-hidden relative border-4 border-white group"
+                title="Klik untuk memilih foto banner"
+              >
+                {preview_url ? (
+                  <>
+                    <img
+                      src={preview_url}
+                      alt="Preview Banner"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-xs font-bold">Ubah</span>
+                    </div>
+                  </>
+                ) : (
+                  <svg
+                    className="w-10 h-10 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                )}
+              </label>
+
               <h2 className="text-[#1B2B65] font-bold text-lg mb-2">
                 Upload Banner Promo
               </h2>
+
+              {/* Input file yang disembunyikan */}
               <input
-                type="text"
-                name="photo_url"
-                value={photo_url}
-                onChange={this.handleInputChange}
-                placeholder="https://link-gambar.com/banner.jpg (opsional)"
-                className="w-72 px-4 py-2 bg-white/80 border-none rounded-lg text-sm focus:ring-2 focus:ring-[#1B2B65] text-center"
+                id="promo_photo_upload"
+                type="file"
+                accept="image/*"
+                onChange={this.handleFileChange}
+                className="hidden"
               />
             </div>
 
             {/* --- Pesan Error Validasi --- */}
             {errorMessage && (
-              <div className="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md font-medium">
+              <div className="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md font-medium shadow-sm">
                 {errorMessage}
               </div>
             )}
@@ -226,23 +258,40 @@ export class PromoFormModal extends Component<
                   <label htmlFor="promo_product" className="block mb-2 text-lg">
                     Produk yang Didiskon
                   </label>
-                  <select
-                    id="promo_product"
-                    required
-                    name="menu_item_id"
-                    value={menu_item_id}
-                    onChange={this.handleInputChange}
-                    className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal"
-                  >
-                    <option value="" disabled>
-                      Pilih Produk
-                    </option>
-                    {myProducts.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} (Stok: {product.stock})
+                  <div className="relative">
+                    <select
+                      id="promo_product"
+                      required
+                      name="menu_item_id"
+                      value={menu_item_id}
+                      onChange={this.handleInputChange}
+                      className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>
+                        Pilih Produk
                       </option>
-                    ))}
-                  </select>
+                      {myProducts.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.name} (Stok: {product.stock})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-[#1B2B65]">
+                      <svg
+                        className="w-5 h-5 opacity-70"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="start_date" className="block mb-2 text-lg">
@@ -255,7 +304,7 @@ export class PromoFormModal extends Component<
                     name="start_date"
                     value={start_date}
                     onChange={this.handleInputChange}
-                    className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal"
+                    className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal cursor-pointer"
                   />
                 </div>
               </div>
@@ -266,24 +315,41 @@ export class PromoFormModal extends Component<
                   <label htmlFor="discount_type" className="block mb-2 text-lg">
                     Tipe Diskon
                   </label>
-                  <select
-                    id="discount_type"
-                    required
-                    name="discount_type"
-                    value={discount_type}
-                    onChange={this.handleInputChange}
-                    className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal"
-                  >
-                    <option value="" disabled>
-                      Pilih Tipe Diskon
-                    </option>
-                    <option value={DiscountType.PERCENTAGE}>
-                      Persentase (%)
-                    </option>
-                    <option value={DiscountType.NOMINAL}>
-                      Potongan Harga (Rp)
-                    </option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="discount_type"
+                      required
+                      name="discount_type"
+                      value={discount_type}
+                      onChange={this.handleInputChange}
+                      className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>
+                        Pilih Tipe Diskon
+                      </option>
+                      <option value={DiscountType.PERCENTAGE}>
+                        Persentase (%)
+                      </option>
+                      <option value={DiscountType.NOMINAL}>
+                        Potongan Harga (Rp)
+                      </option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-[#1B2B65]">
+                      <svg
+                        className="w-5 h-5 opacity-70"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label
@@ -291,7 +357,11 @@ export class PromoFormModal extends Component<
                     className="block mb-2 text-lg"
                   >
                     Nilai Diskon{" "}
-                    {discount_type === DiscountType.PERCENTAGE ? "(%)" : "(Rp)"}
+                    <span className="font-normal text-base">
+                      {discount_type === DiscountType.PERCENTAGE
+                        ? "(%)"
+                        : "(Rp)"}
+                    </span>
                   </label>
                   <input
                     id="discount_value"
@@ -320,7 +390,7 @@ export class PromoFormModal extends Component<
                     name="end_date"
                     value={end_date}
                     onChange={this.handleInputChange}
-                    className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal"
+                    className="w-full px-5 py-3 rounded-xl bg-white border-none focus:ring-2 focus:ring-[#1B2B65] font-normal cursor-pointer"
                   />
                 </div>
               </div>

@@ -14,6 +14,10 @@ export class AuthService extends ApiService {
     return this.get<User>("/auth/me");
   }
 
+  async updateMe(payload: { name?: string; phone?: string }): Promise<User> {
+    return this.patch<User>("/auth/me", payload);
+  }
+
   setToken(token: string): void {
     localStorage.setItem("access_token", token);
   }

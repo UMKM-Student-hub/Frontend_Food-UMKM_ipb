@@ -1,27 +1,30 @@
-import React, { Component } from 'react';
-import type { MenuItem } from '../../domain/MenuItem';
+import { Component } from "react";
+import type { MenuItem } from "../../domain/MenuItem";
 
 interface DetailProdukProps {
   item: MenuItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (item: MenuItem, quantity: number) => void;
+  onAddToCart: (item: MenuItem, quantity: number, note: string) => void;
 }
 
 interface DetailProdukState {
   quantity: number;
+  note: string;
 }
 
-export class DetailProduk extends Component<DetailProdukProps, DetailProdukState> {
+export class DetailProduk extends Component<
+  DetailProdukProps,
+  DetailProdukState
+> {
   constructor(props: DetailProdukProps) {
     super(props);
-    this.state = { quantity: 1 };
+    this.state = { quantity: 1, note: "" };
   }
 
   componentDidUpdate(prevProps: DetailProdukProps) {
-    // Reset quantity setiap kali modal dibuka dengan item baru
     if (!prevProps.isOpen && this.props.isOpen) {
-      this.setState({ quantity: 1 });
+      this.setState({ quantity: 1, note: "" });
     }
   }
 
@@ -41,156 +44,171 @@ export class DetailProduk extends Component<DetailProdukProps, DetailProdukState
 
   private handleAddToCart = (): void => {
     const { item, onAddToCart, onClose } = this.props;
-    const { quantity } = this.state;
+    const { quantity, note } = this.state;
     if (item && item.stock > 0 && item.is_active) {
-      onAddToCart(item, quantity);
+      onAddToCart(item, quantity, note);
       onClose();
     }
   };
 
   private formatPrice(price: number): string {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
-    })
-      .format(price)
-      .replace('Rp', '')
-      .trim();
+    }).format(price);
+  }
+
+  private getFullImageUrl(path: string | null | undefined): string | null {
+    if (!path) return null;
+    return path.startsWith("/") ? `http://localhost:8000${path}` : path;
   }
 
   render() {
     const { item, isOpen, onClose } = this.props;
-    const { quantity } = this.state;
+    const { quantity, note } = this.state;
 
     if (!isOpen || !item) return null;
 
     const isOutOfStock = item.stock === 0;
     const isUnavailable = !item.is_active || isOutOfStock;
+    const rawPhotoUrl = (item as any).photo_url || (item as any).photoUrl;
+    const photoUrl = this.getFullImageUrl(rawPhotoUrl);
 
     return (
-      // Overlay
       <div
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-        style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity"
+        style={{
+          backgroundColor: "rgba(27, 43, 101, 0.6)",
+          backdropFilter: "blur(4px)",
+        }}
         onClick={onClose}
       >
-        {/* Modal Panel */}
         <div
-          className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl"
-          style={{ maxHeight: '90vh' }}
+          className="bg-white w-full sm:max-w-xl rounded-[2rem] shadow-2xl flex flex-col relative animate-slideUp sm:animate-fadeIn p-6 md:p-8"
+          style={{
+            maxHeight: "90vh",
+            overflowY: "auto",
+            msOverflowStyle: "none",
+            scrollbarWidth: "none",
+          }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Gambar Produk */}
-          <div className="relative w-full h-56 sm:h-64 bg-gray-100 flex-shrink-0">
-            <img
-              src={item.photo_url || '/assets/default-food.jpg'}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
-            {/* Tombol tutup */}
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full w-9 h-9 flex items-center justify-center shadow-md hover:bg-white transition-colors focus:outline-none"
-              aria-label="Tutup"
+          <button
+            onClick={onClose}
+            className="absolute top-6 right-6 text-gray-400 hover:text-[#1B2B65] transition-colors focus:outline-none z-10 bg-white/80 rounded-full p-1"
+          >
+            <svg
+              className="h-7 w-7"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            {/* Badge habis */}
-            {isOutOfStock && (
-              <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                Habis
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          <div className="w-full aspect-4/3 md:h-72 shrink-0 rounded-3xl overflow-hidden bg-gray-50 relative shadow-sm">
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={item.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.outerHTML = `<div class="w-full h-full flex items-center justify-center bg-gray-100"><span class="text-gray-400 font-bold text-sm uppercase tracking-wider">Tanpa Gambar</span></div>`;
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">
+                  Tanpa Gambar
+                </span>
               </div>
             )}
-            {/* Badge tidak aktif */}
-            {!item.is_active && !isOutOfStock && (
-              <div className="absolute top-3 left-3 bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                Tidak Tersedia
+
+            {isOutOfStock && (
+              <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-md">
+                Habis
               </div>
             )}
           </div>
 
-          {/* Konten */}
-          <div className="p-5 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 16rem)' }}>
-            {/* Nama & Harga */}
-            <div className="flex items-start justify-between mb-2">
-              <h2 className="text-xl font-extrabold text-[#132043] flex-1 pr-3 leading-tight">
-                {item.name}
-              </h2>
-              <span className="text-xl font-extrabold text-[#fca311] whitespace-nowrap">
-                Rp {this.formatPrice(item.price)}
-              </span>
-            </div>
-
-            {/* Kategori */}
-            <span className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold bg-[#132043]/10 text-[#132043] mb-3 capitalize">
-              {item.category?.toLowerCase() || 'Lainnya'}
+          <div className="text-center my-6">
+            <span className="text-4xl md:text-5xl font-extrabold text-[#FFB20E]">
+              {this.formatPrice(item.price)}
             </span>
+          </div>
 
-            {/* Deskripsi */}
-            <p className="text-slate-500 text-sm leading-relaxed mb-4">
-              {item.description || 'Tidak ada deskripsi untuk produk ini.'}
+          <div className="flex flex-col gap-2 mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#1B2B65]">
+              {item.name}
+            </h2>
+            <p className="text-[#1B2B65]/70 text-base md:text-lg font-medium leading-relaxed">
+              {item.description ||
+                "Hidangan lezat pilihan dari kantin favoritmu."}
+            </p>
+            <p className="text-[#1B2B65] font-medium text-base mt-1 mb-2">
+              Stok : {item.stock}
             </p>
 
-            {/* Info Stok */}
-            <div className="flex items-center gap-2 mb-5 p-3 bg-gray-50 rounded-xl">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              <span className="text-sm text-slate-500">
-                Stok tersedia:{' '}
-                <span className={`font-bold ${item.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {item.stock > 0 ? `${item.stock} porsi` : 'Habis'}
-                </span>
+            <div className="w-full">
+              <label className="block text-[#1B2B65] text-sm font-bold mb-2">
+                Catatan Pesanan (Opsional)
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => this.setState({ note: e.target.value })}
+                placeholder="Contoh: Ekstra pedas, jangan pakai bawang, dll."
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[#1B2B65] text-sm focus:outline-none focus:border-[#FFB20E] transition-all resize-none h-20"
+              />
+            </div>
+          </div>
+
+          <div className="mt-auto pt-4 flex items-center justify-end gap-5">
+            <div className="flex items-center border-2 border-[#1B2B65] rounded-full px-2 py-1.5 bg-white">
+              <button
+                onClick={this.handleDecrement}
+                disabled={quantity <= 1 || isUnavailable}
+                className="w-10 h-10 flex items-center justify-center text-[#FFB20E] font-black text-3xl hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 outline-none pb-1"
+              >
+                −
+              </button>
+              <span className="text-[#1B2B65] font-bold w-10 text-center text-xl select-none">
+                {quantity}
               </span>
+              <button
+                onClick={this.handleIncrement}
+                disabled={quantity >= item.stock || isUnavailable}
+                className="w-10 h-10 flex items-center justify-center text-[#FFB20E] font-black text-3xl hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 outline-none pb-1"
+              >
+                +
+              </button>
             </div>
 
-            {/* Kontrol Kuantitas + Tombol Tambah */}
-            {!isUnavailable && (
-              <div className="flex items-center gap-4">
-                {/* Qty Control */}
-                <div className="flex items-center border-2 border-[#132043] rounded-full px-3 py-1.5">
-                  <button
-                    onClick={this.handleDecrement}
-                    disabled={quantity <= 1}
-                    className="text-[#fca311] text-xl font-bold px-2 focus:outline-none disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Kurangi"
-                  >
-                    −
-                  </button>
-                  <span className="text-[#132043] font-bold w-8 text-center text-base select-none">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={this.handleIncrement}
-                    disabled={quantity >= item.stock}
-                    className="text-[#fca311] text-xl font-bold px-2 focus:outline-none disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Tambah"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Tombol Tambah ke Keranjang */}
-                <button
-                  onClick={this.handleAddToCart}
-                  className="flex-1 bg-[#132043] hover:bg-[#1a2d5a] active:scale-95 text-white font-bold py-3 rounded-full flex items-center justify-center gap-2 transition-all shadow-md focus:outline-none"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Tambah ke Keranjang
-                </button>
-              </div>
-            )}
-
-            {isUnavailable && (
-              <div className="text-center py-3 px-4 bg-gray-100 rounded-xl text-slate-400 text-sm font-medium">
-                {isOutOfStock ? 'Menu ini sedang habis 😔' : 'Menu ini tidak tersedia saat ini'}
-              </div>
-            )}
+            <button
+              onClick={this.handleAddToCart}
+              disabled={isUnavailable}
+              className="bg-[#FFB20E] hover:bg-[#F0A500] active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed text-[#1B2B65] rounded-full w-16 h-16 flex items-center justify-center transition-all shadow-md focus:outline-none shrink-0"
+            >
+              <svg
+                className="h-7 w-7"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </div>

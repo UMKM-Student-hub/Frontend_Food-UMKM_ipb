@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { CatalogService } from "../../services/CatalogService";
-import type { MenuItem, MenuItemCreateRequest } from "../../domain/MenuItem";
+import type { MenuItem } from "../../domain/MenuItem";
 import { PageHeader } from "../../components/seller/PageHeader";
 import { ProductTableRow } from "../../components/seller/ProductTableRow";
 import { ProductFormModal } from "../../components/seller/ProductFormModal";
@@ -11,7 +11,6 @@ interface ProductManagementState {
   products: MenuItem[];
   isLoading: boolean;
   error: string | null;
-
   isModalOpen: boolean;
   modalMode: "add" | "edit";
   selectedProduct: MenuItem | null;
@@ -24,7 +23,6 @@ export default class ProductManagementPage extends Component<
 > {
   private catalogService: CatalogService;
 
-  // 2. Terapkan interface props pada constructor
   constructor(props: ProductManagementPageProps) {
     super(props);
     this.state = {
@@ -43,18 +41,18 @@ export default class ProductManagementPage extends Component<
     this.fetchProducts();
   }
 
-  // --- API CALLS ---
   private fetchProducts = async (): Promise<void> => {
     this.setState({ isLoading: true, error: null });
     try {
       const data = await this.catalogService.getMyProducts();
       this.setState({ products: data });
     } catch (err: unknown) {
-      // 3. Perbaiki error handling (hilangkan 'any')
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Terjadi kesalahan yang tidak diketahui";
+      let errorMessage = "Terjadi kesalahan yang tidak diketahui";
+      if (err instanceof Error) {
+        errorMessage = err.message.includes("[object Object]")
+          ? "Format data API tidak valid. Silakan cek koneksi backend."
+          : err.message;
+      }
       this.setState({ error: errorMessage });
     } finally {
       this.setState({ isLoading: false });
@@ -64,14 +62,12 @@ export default class ProductManagementPage extends Component<
   private handleDelete = async (id: number): Promise<void> => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus produk ini?"))
       return;
-
     try {
       await this.catalogService.deleteProduct(id);
       this.setState((prevState) => ({
         products: prevState.products.filter((p) => p.id !== id),
       }));
     } catch (err: unknown) {
-      // 3. Perbaiki error handling (hilangkan 'any')
       const errorMessage =
         err instanceof Error ? err.message : "Gagal menghapus produk";
       alert(`Gagal menghapus: ${errorMessage}`);
@@ -79,11 +75,10 @@ export default class ProductManagementPage extends Component<
   };
 
   private handleSaveForm = async (
-    payload: MenuItemCreateRequest,
+    payload: FormData,
     id?: number,
   ): Promise<void> => {
     this.setState({ isSubmitting: true });
-
     try {
       if (this.state.modalMode === "add") {
         const newProduct = await this.catalogService.addProduct(payload);
@@ -104,7 +99,6 @@ export default class ProductManagementPage extends Component<
         }));
       }
     } catch (err: unknown) {
-      // 3. Perbaiki error handling (hilangkan 'any')
       const errorMessage =
         err instanceof Error ? err.message : "Gagal menyimpan data";
       alert(`Gagal menyimpan data: ${errorMessage}`);
@@ -113,7 +107,6 @@ export default class ProductManagementPage extends Component<
     }
   };
 
-  // --- MODAL HANDLERS ---
   private openAddModal = (): void => {
     this.setState({
       isModalOpen: true,
@@ -134,7 +127,6 @@ export default class ProductManagementPage extends Component<
     this.setState({ isModalOpen: false, selectedProduct: null });
   };
 
-  // --- RENDER ---
   render() {
     const {
       products,
@@ -147,8 +139,7 @@ export default class ProductManagementPage extends Component<
     } = this.state;
 
     return (
-      <div className="w-full relative pb-20">
-        {/* 1. Komponen Modal */}
+      <div className="w-full relative pb-20 px-4 md:px-0">
         <ProductFormModal
           isOpen={isModalOpen}
           mode={modalMode}
@@ -158,53 +149,72 @@ export default class ProductManagementPage extends Component<
           onSave={this.handleSaveForm}
         />
 
-        {/* 2. Komponen Header */}
-        {/* Pada desain Figma, tombol aksi tertulis "Nama Produk", ini disesuaikan dengan desain */}
         <PageHeader
           title="Menu"
-          buttonLabel="Nama Produk"
+          buttonLabel="Tambah Produk"
           onButtonClick={this.openAddModal}
         />
 
-        {/* Handling State: Loading & Error */}
         {isLoading && (
-          <div className="flex justify-center py-20 text-gray-500 font-medium">
+          <div className="flex justify-center py-20 text-[#1B2B65] font-medium">
             Memuat data produk...
           </div>
         )}
+
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 border border-red-200">
-            {error}{" "}
-            <button onClick={this.fetchProducts} className="underline ml-2">
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-200 shadow-sm flex justify-between items-center">
+            <span>{error}</span>
+            <button
+              onClick={this.fetchProducts}
+              className="underline font-semibold hover:text-red-800"
+            >
               Coba Lagi
             </button>
           </div>
         )}
 
-        {/* 3. Komponen Tabel (Render hanya jika data siap) */}
         {!isLoading && !error && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-200">
-                <thead>
+          <div className="bg-transparent md:bg-white md:rounded-3xl md:shadow-sm md:border md:border-gray-100 overflow-hidden mt-6 md:mt-0">
+            <div className="w-full">
+              <table className="w-full text-left border-collapse block md:table">
+                <thead className="hidden md:table-header-group">
                   <tr className="bg-[#FFD13B] text-[#1B2B65]">
-                    <th className="py-5 px-6 font-bold w-24">Foto</th>
-                    <th className="py-5 px-6 font-bold">Nama Produk</th>
-                    <th className="py-5 px-6 font-bold">Jenis Makanan</th>
-                    <th className="py-5 px-6 font-bold">Harga</th>
-                    <th className="py-5 px-6 font-bold">Stok</th>
-                    <th className="py-5 px-6 font-bold text-center">Action</th>
+                    <th className="py-6 px-6 font-bold w-24 uppercase text-xs tracking-widest">
+                      Foto
+                    </th>
+                    <th className="py-6 px-6 font-bold uppercase text-xs tracking-widest">
+                      Nama Produk
+                    </th>
+                    <th className="py-6 px-6 font-bold uppercase text-xs tracking-widest">
+                      Jenis Makanan
+                    </th>
+                    <th className="py-6 px-6 font-bold uppercase text-xs tracking-widest">
+                      Harga
+                    </th>
+                    <th className="py-6 px-6 font-bold uppercase text-xs tracking-widest">
+                      Stok
+                    </th>
+                    <th className="py-6 px-6 font-bold uppercase text-xs tracking-widest text-center">
+                      Action
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="block md:table-row-group md:divide-y md:divide-gray-100">
                   {products.length === 0 ? (
-                    <tr>
+                    <tr className="block md:table-row bg-white rounded-2xl shadow-sm md:shadow-none p-8 text-center">
                       <td
                         colSpan={6}
-                        className="py-12 text-center text-gray-500 text-lg"
+                        className="block md:table-cell py-12 md:py-24 text-center"
                       >
-                        Belum ada produk. Klik "Nama Produk" untuk mulai
-                        berjualan.
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-5xl mb-4">🍽️</span>
+                          <p className="text-gray-500 text-lg font-medium">
+                            Belum ada produk.
+                          </p>
+                          <p className="text-gray-400 text-sm">
+                            Klik tombol untuk mulai berjualan!
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (

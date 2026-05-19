@@ -1,6 +1,6 @@
 import { ApiService } from "./ApiService";
 import type { UMKM } from "../domain/UMKM";
-import type { MenuItem, MenuItemCreateRequest } from "../domain/MenuItem";
+import type { MenuItem } from "../domain/MenuItem";
 
 export class CatalogService extends ApiService {
   async listAllUMKM(): Promise<UMKM[]> {
@@ -38,8 +38,46 @@ export class CatalogService extends ApiService {
     return this.get<MenuItem>(`/products/${menuItemId}`);
   }
 
-  async addProduct(payload: MenuItemCreateRequest): Promise<MenuItem> {
-    return this.post<MenuItem>("/products/", payload);
+  async getMyProducts(): Promise<MenuItem[]> {
+    return this.get<MenuItem[]>("/products/my");
+  }
+
+  async addProduct(formData: FormData): Promise<MenuItem> {
+    const token = localStorage.getItem("access_token");
+
+    const res = await fetch(`${this.baseUrl}/products/`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.detail || "Gagal menyimpan produk baru");
+    }
+
+    return res.json();
+  }
+
+  async updateProduct(id: number, formData: FormData): Promise<MenuItem> {
+    const token = localStorage.getItem("access_token");
+
+    const res = await fetch(`${this.baseUrl}/products/${id}`, {
+      method: "PUT",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.detail || "Gagal memperbarui produk");
+    }
+
+    return res.json();
   }
 
   async updateStock(itemId: number, newStock: number): Promise<MenuItem> {
