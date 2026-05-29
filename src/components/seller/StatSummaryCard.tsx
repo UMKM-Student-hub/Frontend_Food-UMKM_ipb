@@ -1,14 +1,14 @@
 import { Component } from "react";
 
 interface StatSummaryCardProps {
-  totalRevenue: number;
-  totalTransactions: number;
+  totalRevenue: number | string | null;
+  totalTransactions: number | string | null;
 }
 
 export class StatSummaryCard extends Component<StatSummaryCardProps> {
-  // Method untuk memformat angka dengan pemisah ribuan (titik) ala Indonesia
-  private formatNumber = (value: number): string => {
-    return new Intl.NumberFormat("id-ID").format(value);
+  private formatNumber = (value: any): string => {
+    const num = Number(value) || 0;
+    return new Intl.NumberFormat("id-ID").format(num);
   };
 
   render() {
@@ -16,7 +16,6 @@ export class StatSummaryCard extends Component<StatSummaryCardProps> {
 
     return (
       <div className="bg-[#FFD13B] rounded-4xl w-full py-16 px-8 flex flex-col md:flex-row justify-around items-center gap-12 shadow-sm mb-12">
-        {/* Kolom Kiri: Total Penjualan */}
         <div className="flex flex-col items-center text-center">
           <h2 className="text-2xl font-bold text-black mb-6">
             Total Penjualan (Rp)
@@ -26,7 +25,6 @@ export class StatSummaryCard extends Component<StatSummaryCardProps> {
           </p>
         </div>
 
-        {/* Kolom Kanan: Total Transaksi */}
         <div className="flex flex-col items-center text-center">
           <h2 className="text-2xl font-bold text-black mb-6">
             Total Transaksi

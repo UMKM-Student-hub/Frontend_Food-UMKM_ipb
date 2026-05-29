@@ -30,7 +30,6 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
 
   constructor(props: OrderCardProps) {
     super(props);
-
     const itemReviews: Record<number, ItemReviewState> = {};
     const reviewedIds = props.initialReviewedMenuIds || [];
 
@@ -46,7 +45,6 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
         };
       });
     }
-
     this.state = { itemReviews };
   }
 
@@ -62,8 +60,7 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
   }
 
   private formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", {
+    return new Date(dateString).toLocaleDateString("id-ID", {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -193,56 +190,75 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
   };
 
   private renderStatusBadge(status: OrderStatus) {
-    const statusConfig: Record<
-      string,
-      { bg: string; text: string; label: string }
-    > = {
-      [OrderStatus.PENDING]: {
-        bg: "bg-gray-200",
-        text: "text-gray-700",
-        label: "Menunggu",
-      },
-      [OrderStatus.CONFIRMED]: {
-        bg: "bg-[#1B2B65]",
-        text: "text-white",
-        label: "Dalam Proses",
-      },
-      [OrderStatus.PROCESSING]: {
-        bg: "bg-[#1B2B65]",
-        text: "text-white",
-        label: "Dalam Proses",
-      },
-      [OrderStatus.READY]: {
-        bg: "bg-blue-500",
-        text: "text-white",
-        label: "Siap Diambil",
-      },
-      [OrderStatus.DONE]: {
-        bg: "bg-[#4CAF50]",
-        text: "text-white",
-        label: "Selesai",
-      },
-      [OrderStatus.CANCELLED]: {
-        bg: "bg-[#F44336]",
-        text: "text-white",
-        label: "Dibatalkan",
-      },
-    };
-
-    const config = statusConfig[status] || statusConfig[OrderStatus.PENDING];
-
+    const configs: Record<string, { bg: string; text: string; label: string }> =
+      {
+        [OrderStatus.PENDING]: {
+          bg: "bg-gray-200",
+          text: "text-gray-700",
+          label: "Menunggu",
+        },
+        [OrderStatus.CONFIRMED]: {
+          bg: "bg-[#1B2B65]",
+          text: "text-white",
+          label: "Dalam Proses",
+        },
+        [OrderStatus.PROCESSING]: {
+          bg: "bg-[#1B2B65]",
+          text: "text-white",
+          label: "Dalam Proses",
+        },
+        [OrderStatus.READY]: {
+          bg: "bg-blue-500",
+          text: "text-white",
+          label: "Siap Diambil",
+        },
+        [OrderStatus.DONE]: {
+          bg: "bg-[#4CAF50]",
+          text: "text-white",
+          label: "Selesai",
+        },
+        [OrderStatus.CANCELLED]: {
+          bg: "bg-[#F44336]",
+          text: "text-white",
+          label: "Dibatalkan",
+        },
+      };
+    const conf = configs[status] || configs[OrderStatus.PENDING];
     return (
       <span
-        className={`px-6 py-2.5 rounded-full font-bold text-sm tracking-wide shadow-sm ${config.bg} ${config.text}`}
+        className={`px-6 py-2.5 rounded-full font-bold text-sm ${conf.bg} ${conf.text}`}
       >
-        {config.label}
+        {conf.label}
       </span>
     );
   }
 
   private renderReviewForm(menuItemId: number) {
     const current = this.state.itemReviews[menuItemId];
-    if (!current || current.isReviewed) return null;
+    if (!current) return null;
+
+    if (current.isReviewed) {
+      return (
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100/50">
+          <svg
+            className="w-5 h-5 text-[#4CAF50]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.5"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span className="text-[#4CAF50] font-bold text-[15px]">
+            Kamu sudah mengulas menu ini.
+          </span>
+        </div>
+      );
+    }
 
     return (
       <form
@@ -370,7 +386,6 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
                         {item.menu_name}
                       </p>
 
-                      {/* ELEMEN BARU UNTUK MERENDER CATATAN PESANAN */}
                       {item.notes && item.notes.trim() !== "" && (
                         <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 w-fit mb-1.5">
                           <p className="text-gray-500 text-xs font-medium italic">

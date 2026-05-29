@@ -24,4 +24,8 @@ export class ReviewService extends ApiService {
   async getUMKMPublicReviews(umkmId: number): Promise<Review[]> {
     return this.get<Review[]>(`/reviews/umkm/${umkmId}`);
   }
+
+  async getMyReviews(): Promise<Review[]> {
+    return this.get<Review[]>("/reviews/my");
+  }
 }

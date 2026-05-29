@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { UMKM } from "../../domain/UMKM";
 import type { MenuItem } from "../../domain/MenuItem";
 import { CatalogService } from "../../services/CatalogService";
+import { ReviewService } from "../../services/ReviewService";
 
 interface UMKMCardProps {
   umkm: UMKM;
@@ -14,21 +15,38 @@ interface UMKMCardProps {
 interface UMKMCardState {
   menus: MenuItem[];
   isLoading: boolean;
+  averageRating: number;
+  reviewCount: number;
 }
 
 export class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
   private catalogService = new CatalogService();
+  private reviewService = new ReviewService();
   private scrollRef = createRef<HTMLDivElement>();
 
   state: UMKMCardState = {
     menus: [],
     isLoading: true,
+    averageRating: 0,
+    reviewCount: 0,
   };
 
   async componentDidMount() {
     try {
-      const menus = await this.catalogService.getUMKMMenu(this.props.umkm.id);
-      this.setState({ menus, isLoading: false });
+      const [menus, reviews] = await Promise.all([
+        this.catalogService.getUMKMMenu(this.props.umkm.id).catch(() => []),
+        this.reviewService
+          .getUMKMPublicReviews(this.props.umkm.id)
+          .catch(() => []),
+      ]);
+
+      const reviewCount = reviews.length;
+      const averageRating =
+        reviewCount > 0
+          ? reviews.reduce((acc, rev) => acc + rev.rating, 0) / reviewCount
+          : 0;
+
+      this.setState({ menus, averageRating, reviewCount, isLoading: false });
     } catch (error) {
       this.setState({ isLoading: false });
     }
@@ -49,7 +67,7 @@ export class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
 
   render() {
     const { umkm, activeFilter, searchKeyword } = this.props;
-    const { menus, isLoading } = this.state;
+    const { menus, isLoading, averageRating, reviewCount } = this.state;
 
     const kw = searchKeyword.toLowerCase().trim();
     const isUmkmMatch = umkm.name.toLowerCase().includes(kw);
@@ -83,19 +101,24 @@ export class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
               {umkm.location}
             </p>
           </div>
-          <div className="text-right bg-yellow-50 px-3 py-1.5 rounded-xl border border-yellow-100">
-            <div className="text-[#1B2B65] font-black text-lg flex items-center gap-1.5 justify-end">
+          <div className="flex flex-col items-center justify-center bg-yellow-50 px-3 py-1.5 rounded-xl border border-yellow-100 min-w-18">
+            <div className="text-[#1B2B65] font-black text-lg flex items-center gap-1 justify-center">
               <svg
-                className="w-5 h-5 text-[#FFB20E]"
+                className="w-4 h-4 text-[#FFB20E]"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
-              4.8
+              {reviewCount > 0
+                ? averageRating.toLocaleString("id-ID", {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })
+                : "Baru"}
             </div>
-            <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mt-0.5">
-              Ulasan
+            <div className="text-gray-500 text-[10px] font-extrabold uppercase tracking-wider mt-0.5 text-center">
+              {reviewCount > 0 ? `${reviewCount} Ulasan` : "Belum ada"}
             </div>
           </div>
         </div>

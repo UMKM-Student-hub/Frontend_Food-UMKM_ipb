@@ -1,6 +1,7 @@
 import { Component } from "react";
 import { CatalogService } from "../../services/CatalogService";
 import { OrderService } from "../../services/OrderService";
+import { ReviewService } from "../../services/ReviewService";
 import type { UMKM } from "../../domain/UMKM";
 import type { MenuItem } from "../../domain/MenuItem";
 import { ProductCategory } from "../../domain/enums";
@@ -24,7 +25,8 @@ interface ProductDetailState {
   umkm: UMKM | null;
   menuItems: MenuItem[];
   filteredItems: MenuItem[];
-  averageRating: number | null;
+  averageRating: number;
+  reviewCount: number;
   isLoading: boolean;
   error: string | null;
   searchKeyword: string;
@@ -40,6 +42,7 @@ interface ProductDetailState {
 class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
   private catalogService = new CatalogService();
   private orderService = new OrderService();
+  private reviewService = new ReviewService();
 
   constructor(props: RouterProps) {
     super(props);
@@ -47,7 +50,8 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       umkm: null,
       menuItems: [],
       filteredItems: [],
-      averageRating: null,
+      averageRating: 0,
+      reviewCount: 0,
       isLoading: true,
       error: null,
       searchKeyword: "",
@@ -80,16 +84,24 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
 
     try {
       const id = Number(umkmId);
-      const [umkmData, menuData] = await Promise.all([
+      const [umkmData, menuData, reviewsData] = await Promise.all([
         this.catalogService.getUMKMProfile(id),
         this.catalogService.getUMKMMenu(id),
+        this.reviewService.getUMKMPublicReviews(id).catch(() => []),
       ]);
+
+      const reviewCount = reviewsData.length;
+      const averageRating =
+        reviewCount > 0
+          ? reviewsData.reduce((acc, rev) => acc + rev.rating, 0) / reviewCount
+          : 0;
 
       this.setState({
         umkm: umkmData,
         menuItems: menuData,
         filteredItems: menuData,
-        averageRating: 4.8,
+        averageRating,
+        reviewCount,
       });
     } catch (err: unknown) {
       const msg =
@@ -268,6 +280,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       umkm,
       filteredItems,
       averageRating,
+      reviewCount,
       isLoading,
       error,
       searchKeyword,
@@ -303,6 +316,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
             <UMKMProfileHeader
               umkm={umkm}
               averageRating={averageRating}
+              reviewCount={reviewCount}
               onReviewClick={this.handleOpenReviewModal}
             />
           </div>
@@ -378,7 +392,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              <span className="absolute -top-2.5 -right-3 bg-[#1B2B65] text-white text-xs font-black rounded-full min-w-[22px] h-[22px] flex items-center justify-center border-2 border-[#FFB20E] px-1">
+              <span className="absolute -top-2.5 -right-3 bg-[#1B2B65] text-white text-xs font-black rounded-full min-w-5.5 h-5.5 flex items-center justify-center border-2 border-[#FFB20E] px-1">
                 {totalCartItems}
               </span>
             </div>

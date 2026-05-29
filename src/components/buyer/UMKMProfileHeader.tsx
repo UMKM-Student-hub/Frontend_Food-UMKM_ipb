@@ -14,6 +14,12 @@ export class UMKMProfileHeader extends Component<UMKMProfileHeaderProps> {
     return rating.toLocaleString("id-ID", { maximumFractionDigits: 1 });
   }
 
+  private parseBoolean(value: any): boolean {
+    if (value === true || value === 1 || value === "1") return true;
+    if (String(value).toLowerCase() === "true") return true;
+    return false;
+  }
+
   render() {
     const { umkm, averageRating, reviewCount, onReviewClick } = this.props;
 
@@ -36,7 +42,8 @@ export class UMKMProfileHeader extends Component<UMKMProfileHeaderProps> {
       );
     }
 
-    const isOpen = (umkm as any).is_open ?? umkm.isOpen ?? false;
+    const rawIsOpen = (umkm as any).is_open ?? (umkm as any).isOpen;
+    const isOpen = this.parseBoolean(rawIsOpen);
 
     return (
       <div className="flex flex-col md:flex-row justify-between items-start w-full py-6 md:py-10 border-b border-gray-100 bg-transparent gap-6 md:gap-8">
