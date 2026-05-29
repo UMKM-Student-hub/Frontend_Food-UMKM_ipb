@@ -2,7 +2,7 @@ import { Component } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { AuthService } from "../../services/AuthService";
-import { umkmService } from "../../services/UMKMService";
+import { UMKMService } from "../../services/UMKMService";
 import { UserRole } from "../../domain/enums";
 
 interface RegisterAdminProps {
@@ -25,7 +25,7 @@ export class RegisterAdmin extends Component<
   RegisterAdminState
 > {
   private authService = new AuthService();
-
+  private umkmService = new UMKMService();
   state: RegisterAdminState = {
     namaUMKM: "",
     email: "",
@@ -67,7 +67,7 @@ export class RegisterAdmin extends Component<
       const loginResponse = await this.authService.login({ email, password });
       this.authService.setToken(loginResponse.access_token);
 
-      await umkmService.createUMKM({
+      await this.umkmService.createUMKM({
         name: namaUMKM,
         description: "Selamat datang di toko kami!",
         location: "Alamat belum diatur",

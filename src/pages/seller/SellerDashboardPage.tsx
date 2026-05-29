@@ -1,11 +1,9 @@
 import { Component } from "react";
-
-// Import Services & Enums
 import { OrderService } from "../../services/OrderService";
+import { umkmService } from "../../services/UMKMService";
 import { OrderStatus } from "../../domain/enums";
 import type { Order } from "../../domain/Order";
-
-// Import Components
+import type { UMKM } from "../../domain/UMKM";
 import { PageHeader } from "../../components/seller/PageHeader";
 import { StatSummaryCard } from "../../components/seller/StatSummaryCard";
 import { StoreStatusToggle } from "../../components/seller/StoreStatusToggle";
@@ -15,10 +13,12 @@ interface SellerDashboardPageProps {}
 interface SellerDashboardPageState {
   totalRevenue: number;
   totalTransactions: number;
+  umkm: UMKM | null;
   isStoreOpen: boolean;
   isLoading: boolean;
   isToggleLoading: boolean;
   error: string | null;
+  toggleError: string | null;
 }
 
 export default class SellerDashboardPage extends Component<
@@ -32,10 +32,12 @@ export default class SellerDashboardPage extends Component<
     this.state = {
       totalRevenue: 0,
       totalTransactions: 0,
-      isStoreOpen: true, // Default toko buka, idealnya ditarik dari AuthContext/ProfileService
+      umkm: null,
+      isStoreOpen: false,
       isLoading: true,
       isToggleLoading: false,
       error: null,
+      toggleError: null,
     };
     this.orderService = new OrderService();
   }
@@ -44,68 +46,72 @@ export default class SellerDashboardPage extends Component<
     this.fetchDashboardData();
   }
 
-  // --- API CALLS & KALKULASI ---
-
   private fetchDashboardData = async (): Promise<void> => {
     this.setState({ isLoading: true, error: null });
 
     try {
-      // Ambil seluruh riwayat pesanan
-      const orders: Order[] = await this.orderService.getIncomingOrders();
+      const [umkm, orders]: [UMKM, Order[]] = await Promise.all([
+        umkmService.getMyStore(),
+        this.orderService.getIncomingOrders(),
+      ]);
 
-      // Kalkulasi Metrik: Filter HANYA pesanan yang berstatus DONE (Selesai)
       const doneOrders = orders.filter(
         (order) => order.status === OrderStatus.DONE,
       );
-
-      // Hitung Total Transaksi (Jumlah pesanan yang selesai)
       const transactions = doneOrders.length;
-
-      // Hitung Total Penjualan (Jumlah total harga dari pesanan yang selesai)
       const revenue = doneOrders.reduce(
         (sum, order) => sum + order.total_price,
         0,
       );
 
       this.setState({
+        umkm,
+        isStoreOpen: umkm.is_open,
         totalTransactions: transactions,
         totalRevenue: revenue,
       });
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Gagal memuat data metrik dashboard.";
+        err instanceof Error ? err.message : "Gagal memuat data dashboard.";
       this.setState({ error: errorMessage });
     } finally {
       this.setState({ isLoading: false });
     }
   };
 
-  // --- HANDLER STATUS TOKO ---
-
   private handleToggleStoreStatus = async (): Promise<void> => {
-    this.setState({ isToggleLoading: true });
+    const { umkm, isStoreOpen, isToggleLoading } = this.state;
+
+    if (!umkm || isToggleLoading) return;
+
+    const previousIsOpen = isStoreOpen;
+
+    this.setState({
+      isStoreOpen: !isStoreOpen,
+      isToggleLoading: true,
+      toggleError: null,
+    });
 
     try {
-      // Simulasi pemanggilan API ke backend untuk mengubah status toko.
-      // Jika nanti kamu punya AuthService/ProfileService, panggil di sini.
-      // await this.profileService.updateStoreStatus(!this.state.isStoreOpen);
+      const updatedUMKM = await umkmService.toggleStoreStatus(umkm.id);
 
-      // Simulasi delay jaringan 1 detik agar animasi loading di tombol terlihat
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      this.setState((prevState) => ({
-        isStoreOpen: !prevState.isStoreOpen,
-      }));
+      this.setState({
+        umkm: updatedUMKM,
+        isStoreOpen: updatedUMKM.is_open,
+      });
     } catch (err: unknown) {
-      alert("Gagal mengubah status toko. Silakan coba lagi.");
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Gagal mengubah status toko. Silakan coba lagi.";
+      this.setState({
+        isStoreOpen: previousIsOpen,
+        toggleError: errorMessage,
+      });
     } finally {
       this.setState({ isToggleLoading: false });
     }
   };
-
-  // --- RENDER ---
 
   render() {
     const {
@@ -115,31 +121,55 @@ export default class SellerDashboardPage extends Component<
       isLoading,
       isToggleLoading,
       error,
+      toggleError,
     } = this.state;
 
     return (
       <div className="w-full relative pb-20">
-        {/* Header dengan Toggle Status Toko di sebelah kanan */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
           <PageHeader title="Dashboard" />
 
-          {/* Komponen Toggle Status Buka/Tutup */}
           <StoreStatusToggle
             isOpen={isStoreOpen}
-            isLoading={isToggleLoading}
+            isLoading={isLoading || isToggleLoading}
             onToggle={this.handleToggleStoreStatus}
           />
         </div>
 
-        {/* Handling State: Loading & Error */}
-        {isLoading && (
-          <div className="flex justify-center py-20 text-[#1B2B65] font-medium">
-            Mengkalkulasi metrik penjualan...
+        {toggleError && (
+          <div className="flex items-center gap-3 bg-red-50 text-red-700 border border-red-200 px-5 py-3 rounded-xl mb-6 shadow-sm">
+            <svg
+              className="w-5 h-5 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              />
+            </svg>
+            <span className="font-semibold text-sm">{toggleError}</span>
+            <button
+              className="ml-auto text-red-500 hover:text-red-800 font-bold text-lg leading-none"
+              onClick={() => this.setState({ toggleError: null })}
+              aria-label="Tutup notifikasi error"
+            >
+              ×
+            </button>
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 border border-red-200 shadow-sm">
+        {isLoading && (
+          <div className="flex justify-center py-20 text-[#1B2B65] font-medium animate-pulse">
+            Memuat data dashboard...
+          </div>
+        )}
+
+        {!isLoading && error && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-200 shadow-sm">
             {error}{" "}
             <button
               onClick={this.fetchDashboardData}
@@ -150,19 +180,12 @@ export default class SellerDashboardPage extends Component<
           </div>
         )}
 
-        {/* Banner Metrik Penjualan */}
         {!isLoading && !error && (
           <StatSummaryCard
             totalRevenue={totalRevenue}
             totalTransactions={totalTransactions}
           />
         )}
-
-        {/* 
-          Catatan Ekstra: Jika nanti kamu ingin menambahkan grafik garis (Line Chart) 
-          atau daftar ulasan (Review) terbaru di bawah banner kuning, 
-          area ini sangat cocok untuk meletakkannya.
-        */}
       </div>
     );
   }

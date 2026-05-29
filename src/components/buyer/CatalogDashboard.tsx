@@ -47,7 +47,7 @@ export class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
           : 0;
 
       this.setState({ menus, averageRating, reviewCount, isLoading: false });
-    } catch (error) {
+    } catch {
       this.setState({ isLoading: false });
     }
   }
@@ -87,21 +87,60 @@ export class UMKMCatalogCard extends Component<UMKMCardProps, UMKMCardState> {
       return null;
     }
 
+    const isOpen = umkm.is_open;
+
     return (
       <Link
         to={`/catalog/${umkm.id}`}
-        className="block bg-white border border-gray-100 hover:border-[#FFCF00] rounded-3xl p-5 md:p-6 mb-6 shadow-sm w-full cursor-pointer hover:shadow-xl transition-all duration-300 relative group"
+        className={`block bg-white border rounded-3xl p-5 md:p-6 mb-6 shadow-sm w-full cursor-pointer transition-all duration-300 relative group ${
+          isOpen
+            ? "border-gray-100 hover:border-[#FFCF00] hover:shadow-xl"
+            :
+              "border-gray-200 hover:border-red-200 hover:shadow-md opacity-80"
+        }`}
+        aria-label={`${umkm.name} – ${isOpen ? "Sedang Buka" : "Sedang Tutup"}`}
       >
         <div className="flex justify-between items-start mb-5">
-          <div>
-            <h2 className="text-[#1B2B65] font-extrabold text-2xl mb-1 group-hover:text-[#FFB20E] transition-colors">
-              {umkm.name}
-            </h2>
-            <p className="text-gray-500 font-medium text-sm md:text-base">
+          <div className="flex-1 min-w-0 mr-3">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h2
+                className={`text-[#1B2B65] font-extrabold text-2xl transition-colors truncate ${
+                  isOpen
+                    ? "group-hover:text-[#FFB20E]"
+                    : "group-hover:text-red-500"
+                }`}
+              >
+                {umkm.name}
+              </h2>
+
+              <span
+                className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                  isOpen
+                    ? "bg-green-50 text-green-700 border-green-200"
+                    : "bg-red-50 text-red-600 border-red-200"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isOpen ? "bg-green-500 animate-pulse" : "bg-red-400"
+                  }`}
+                />
+                {isOpen ? "Buka" : "Tutup"}
+              </span>
+            </div>
+
+            <p className="text-gray-500 font-medium text-sm md:text-base truncate">
               {umkm.location}
             </p>
+
+            {!isOpen && (
+              <p className="text-xs text-red-400 font-medium mt-1">
+                Kantin sedang tidak menerima pesanan
+              </p>
+            )}
           </div>
-          <div className="flex flex-col items-center justify-center bg-yellow-50 px-3 py-1.5 rounded-xl border border-yellow-100 min-w-18">
+
+          <div className="shrink-0 flex flex-col items-center justify-center bg-yellow-50 px-3 py-1.5 rounded-xl border border-yellow-100 min-w-[72px]">
             <div className="text-[#1B2B65] font-black text-lg flex items-center gap-1 justify-center">
               <svg
                 className="w-4 h-4 text-[#FFB20E]"
@@ -236,7 +275,7 @@ export class CatalogDashboard extends Component<
     try {
       const umkms = await this.catalogService.listAllUMKM();
       this.setState({ umkms, isLoading: false });
-    } catch (error) {
+    } catch {
       this.setState({ isLoading: false });
     }
   }
@@ -281,7 +320,7 @@ export class CatalogDashboard extends Component<
 
           {isLoading ? (
             <div className="flex justify-center items-center h-40">
-              <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#FFB20E] border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#FFB20E] border-t-transparent" />
             </div>
           ) : (
             <div className="catalog-wrapper flex flex-col gap-2">
