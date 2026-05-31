@@ -3,7 +3,6 @@ import { OrderService } from "../../services/OrderService";
 import type { Order } from "../../domain/Order";
 import { OrderStatus } from "../../domain/enums";
 import type { TabType } from "../../components/seller/OrderTabs";
-
 import { PageHeader } from "../../components/seller/PageHeader";
 import { OrderTabs } from "../../components/seller/OrderTabs";
 import { OrderTableRow } from "../../components/seller/OrderTableRow";
@@ -17,7 +16,6 @@ interface IncomingOrdersPageState {
   activeTab: TabType;
   isLoading: boolean;
   error: string | null;
-
   isRejectModalOpen: boolean;
   rejectingOrderId: number | null;
   isReadyModalOpen: boolean;
@@ -229,6 +227,7 @@ export default class IncomingOrdersPage extends Component<
             Mencari pesanan baru...
           </div>
         )}
+
         {error && (
           <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 border border-red-200">
             {error}{" "}
@@ -242,45 +241,48 @@ export default class IncomingOrdersPage extends Component<
         )}
 
         {!isLoading && !error && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-200">
-                <thead>
-                  <tr className="bg-[#FFD13B] text-[#1B2B65]">
-                    <th className="py-5 px-6 font-bold w-24">ID</th>
-                    <th className="py-5 px-6 font-bold">NAMA</th>
-                    <th className="py-5 px-6 font-bold">PESANAN</th>
-                    <th className="py-5 px-6 font-bold">TOTAL</th>
-                    <th className="py-5 px-6 font-bold text-center w-48">
-                      {activeTab === "masuk" ? "KONFIRMASI PESANAN" : "STATUS"}
-                    </th>
+          <div className="bg-transparent md:bg-white md:rounded-xl md:shadow-sm md:border md:border-gray-100">
+            <table className="block md:table w-full text-left border-collapse">
+              <thead className="hidden md:table-header-group">
+                <tr className="bg-[#FFD13B] text-[#1B2B65]">
+                  <th className="py-5 px-6 font-bold w-24 rounded-tl-xl">ID</th>
+                  <th className="py-5 px-6 font-bold">NAMA PEMESAN</th>
+                  <th className="py-5 px-6 font-bold">DETAIL PESANAN</th>
+                  <th className="py-5 px-6 font-bold">TOTAL & PEMBAYARAN</th>
+                  <th className="py-5 px-6 font-bold text-center w-56 rounded-tr-xl">
+                    {activeTab === "masuk" ? "AKSI" : "STATUS"}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="block md:table-row-group">
+                {filteredOrders.length === 0 ? (
+                  <tr className="block md:table-row bg-white rounded-3xl md:rounded-none shadow-sm md:shadow-none p-8 text-center">
+                    <td
+                      colSpan={5}
+                      className="block md:table-cell py-12 md:py-16 text-center text-gray-500 text-lg"
+                    >
+                      <div className="flex flex-col items-center gap-3">
+                        <span className="text-5xl">📄</span>
+                        <p className="font-bold text-[#1B2B65]">
+                          Tidak ada pesanan.
+                        </p>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        className="py-16 text-center text-gray-500 text-lg"
-                      >
-                        Tidak ada pesanan di kategori ini.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredOrders.map((order) => (
-                      <OrderTableRow
-                        key={order.id}
-                        order={order}
-                        activeTab={activeTab}
-                        onAccept={this.handleAcceptOrder}
-                        onReject={this.openRejectModal}
-                        onMarkReady={this.openReadyModal}
-                      />
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                ) : (
+                  filteredOrders.map((order) => (
+                    <OrderTableRow
+                      key={order.id}
+                      order={order}
+                      activeTab={activeTab}
+                      onAccept={this.handleAcceptOrder}
+                      onReject={this.openRejectModal}
+                      onMarkReady={this.openReadyModal}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

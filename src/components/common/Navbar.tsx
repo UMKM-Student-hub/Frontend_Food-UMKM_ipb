@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import { Component } from "react";
+import { Link, NavLink } from "react-router-dom";
 
 import logoMascot from "/images/logo-navbar.png";
 import iconProfile from "/images/logo-profil.png";
@@ -26,16 +26,28 @@ export class Navbar extends Component<NavbarProps, NavbarState> {
     this.setState({ isMenuOpen: false });
   };
 
+  private getNavClass = ({ isActive }: { isActive: boolean }) =>
+    `font-semibold text-lg tracking-wide transition-all duration-200 ${
+      isActive
+        ? "text-[#FFD13B] border-b-2 border-[#FFD13B] pb-1"
+        : "text-white hover:text-gray-300"
+    }`;
+
+  private getMobileNavClass = ({ isActive }: { isActive: boolean }) =>
+    `block text-center font-semibold text-lg py-3 w-full transition-colors duration-200 ${
+      isActive ? "text-[#FFD13B] bg-white/10" : "text-white hover:bg-white/10"
+    }`;
+
   render() {
     const { isMenuOpen } = this.state;
 
     return (
-      <nav className="bg-[#102A71] sticky top-0 z-50 w-full">
+      <nav className="bg-[#102A71] sticky top-0 z-50 w-full shadow-md">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <Link
-              to="/Home"
-              className="flex items-center gap-4 hover:opacity-90 transition-opacity"
+              to="/home"
+              className="flex items-center gap-4 hover:opacity-90 transition-opacity focus:outline-none"
               onClick={this.closeMenu}
             >
               <img
@@ -51,7 +63,7 @@ export class Navbar extends Component<NavbarProps, NavbarState> {
             <div className="md:hidden flex items-center">
               <button
                 onClick={this.toggleMenu}
-                className="text-white hover:text-gray-300 focus:outline-none transition-colors"
+                className="text-white hover:text-[#FFD13B] focus:outline-none transition-colors"
                 aria-label="Toggle menu"
               >
                 <span className="text-3xl font-bold">
@@ -62,24 +74,21 @@ export class Navbar extends Component<NavbarProps, NavbarState> {
 
             <ul className="hidden md:flex md:items-center md:gap-10">
               <li>
-                <Link
-                  to="/Home"
-                  className="text-white font-semibold text-lg hover:opacity-80 transition-opacity"
-                >
+                <NavLink to="/home" className={this.getNavClass}>
                   Home
-                </Link>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/my-orders" className={this.getNavClass}>
+                  Pesanan
+                </NavLink>
               </li>
               <li>
                 <Link
-                  to="/my-orders"
-                  className="text-white font-semibold text-lg hover:opacity-80 transition-opacity"
+                  to="/profile"
+                  className="flex items-center group focus:outline-none"
                 >
-                  Pesanan
-                </Link>
-              </li>
-              <li>
-                <Link to="/profile" className="flex items-center group">
-                  <div className="bg-white rounded-full w-12 h-12 flex justify-center items-center overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+                  <div className="bg-white rounded-full w-12 h-12 flex justify-center items-center overflow-hidden shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all">
                     <img
                       src={iconProfile}
                       alt="User Profile"
@@ -93,44 +102,45 @@ export class Navbar extends Component<NavbarProps, NavbarState> {
         </div>
 
         <div
-          className={`md:hidden absolute w-full bg-[#1B2B65] border-t border-white/10 shadow-lg transition-all duration-300 ease-in-out ${
+          className={`md:hidden absolute w-full bg-[#1B2B65] border-t border-white/10 shadow-xl transition-all duration-300 ease-in-out ${
             isMenuOpen
               ? "top-20 opacity-100 visible"
               : "top-16 opacity-0 invisible pointer-events-none"
           }`}
         >
-          <ul className="flex flex-col items-center py-6 gap-6">
-            <li className="w-full text-center">
-              <Link
-                to="/Home"
-                className="block text-white font-semibold text-lg hover:bg-white/10 py-2 w-full transition-colors"
+          <ul className="flex flex-col items-center py-4 gap-2">
+            <li className="w-full">
+              <NavLink
+                to="/home"
+                className={this.getMobileNavClass}
                 onClick={this.closeMenu}
               >
                 Home
-              </Link>
+              </NavLink>
             </li>
-            <li className="w-full text-center">
-              <Link
+            <li className="w-full">
+              <NavLink
                 to="/my-orders"
-                className="block text-white font-semibold text-lg hover:bg-white/10 py-2 w-full transition-colors"
+                className={this.getMobileNavClass}
                 onClick={this.closeMenu}
               >
                 Pesanan
-              </Link>
+              </NavLink>
             </li>
-            <li className="w-full flex justify-center pt-2">
+            <li className="w-full flex justify-center pt-4 pb-2 border-t border-white/10 mt-2">
               <Link
                 to="/profile"
-                className="flex items-center"
+                className="flex items-center gap-3 bg-white/5 hover:bg-white/10 px-6 py-2 rounded-full transition-colors"
                 onClick={this.closeMenu}
               >
-                <div className="bg-white rounded-full w-14 h-14 flex justify-center items-center overflow-hidden shadow-md">
+                <div className="bg-white rounded-full w-10 h-10 flex justify-center items-center overflow-hidden shadow-md">
                   <img
                     src={iconProfile}
                     alt="User Profile"
-                    className="w-9 h-9 object-contain"
+                    className="w-7 h-7 object-contain"
                   />
                 </div>
+                <span className="text-white font-medium">Profil Saya</span>
               </Link>
             </li>
           </ul>

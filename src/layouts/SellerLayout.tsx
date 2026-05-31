@@ -1,23 +1,38 @@
-import { Component } from "react";
+import { Component, Suspense } from "react";
 import { Outlet, Link, NavLink } from "react-router-dom";
-
+import { UMKMService } from "../services/UMKMService";
 import iconProfile from "/images/logo-profil.png";
 
 interface SellerLayoutProps {}
 
 interface SellerLayoutState {
   isMenuOpen: boolean;
+  storeName: string | null;
 }
 
 export default class SellerLayout extends Component<
   SellerLayoutProps,
   SellerLayoutState
 > {
+  private umkmService = new UMKMService();
+
   constructor(props: SellerLayoutProps) {
     super(props);
     this.state = {
       isMenuOpen: false,
+      storeName: null,
     };
+  }
+
+  async componentDidMount() {
+    try {
+      const umkm = await (this.umkmService as any).getMyProfile();
+      if (umkm && umkm.name) {
+        this.setState({ storeName: umkm.name });
+      }
+    } catch (error) {
+      console.warn(error);
+    }
   }
 
   private toggleMenu = (): void => {
@@ -36,21 +51,21 @@ export default class SellerLayout extends Component<
     }`;
 
   private getMobileNavClass = ({ isActive }: { isActive: boolean }) =>
-    `text-xl font-semibold tracking-wide transition-colors duration-200 ${
-      isActive ? "text-[#FFD13B]" : "text-white hover:text-gray-300"
+    `text-xl font-semibold tracking-wide transition-colors duration-200 block w-full text-center py-2 ${
+      isActive ? "text-[#FFD13B] bg-white/5" : "text-white hover:bg-white/10"
     }`;
 
   render() {
-    const { isMenuOpen } = this.state;
+    const { isMenuOpen, storeName } = this.state;
 
     return (
-      <div className="min-h-screen bg-white flex flex-col font-sans">
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
         <nav className="bg-[#1B2B65] sticky top-0 z-50 shadow-md w-full">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
               <Link
                 to="/seller"
-                className="flex items-center gap-4 hover:opacity-90 transition-opacity"
+                className="flex items-center gap-4 hover:opacity-90 transition-opacity focus:outline-none"
                 onClick={this.closeMenu}
               >
                 <img
@@ -63,10 +78,8 @@ export default class SellerLayout extends Component<
                 </span>
               </Link>
 
-              {/* Tengah: Menu Navigasi (Desktop) */}
               <ul className="hidden md:flex md:items-center gap-8 ml-auto mr-10">
                 <li>
-                  {/* Gunakan 'end' agar /seller tidak terus-terusan aktif saat membuka /seller/orders */}
                   <NavLink to="/seller" end className={this.getNavClass}>
                     Dashboard
                   </NavLink>
@@ -88,11 +101,10 @@ export default class SellerLayout extends Component<
                 </li>
               </ul>
 
-              {/* Hamburger Icon (Mobile) */}
               <div className="md:hidden flex items-center">
                 <button
                   onClick={this.toggleMenu}
-                  className="text-white hover:text-gray-300 focus:outline-none transition-colors"
+                  className="text-white hover:text-[#FFD13B] focus:outline-none transition-colors"
                 >
                   <span className="text-3xl font-bold">
                     {isMenuOpen ? "✕" : "☰"}
@@ -100,14 +112,24 @@ export default class SellerLayout extends Component<
                 </button>
               </div>
 
-              {/* Kanan: Profile Icon (Desktop) */}
-              <div className="hidden md:flex md:items-center">
-                <Link to="/seller/profile" className="flex items-center group">
-                  <div className="bg-white rounded-full w-12 h-12 flex justify-center items-center overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+              <div className="hidden md:flex md:items-center gap-4 border-l border-white/20 pl-6">
+                {storeName && (
+                  <span className="text-white font-medium text-sm hidden lg:block text-right">
+                    Halo, <br />
+                    <strong className="text-[#FFD13B] truncate max-w-30 inline-block">
+                      {storeName}
+                    </strong>
+                  </span>
+                )}
+                <Link
+                  to="/seller/profile"
+                  className="flex items-center group focus:outline-none"
+                >
+                  <div className="bg-white rounded-full w-11 h-11 flex justify-center items-center overflow-hidden shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all">
                     <img
                       src={iconProfile}
                       alt="Seller Profile"
-                      className="w-8 h-8 object-contain"
+                      className="w-7 h-7 object-contain"
                     />
                   </div>
                 </Link>
@@ -115,16 +137,15 @@ export default class SellerLayout extends Component<
             </div>
           </div>
 
-          {/* Menu Mobile Dropdown */}
           <div
-            className={`md:hidden absolute w-full bg-[#1B2B65] border-t border-white/10 shadow-lg transition-all duration-300 ease-in-out ${
+            className={`md:hidden absolute w-full bg-[#1B2B65] border-t border-white/10 shadow-xl transition-all duration-300 ease-in-out ${
               isMenuOpen
                 ? "top-20 opacity-100 visible"
                 : "top-16 opacity-0 invisible pointer-events-none"
             }`}
           >
-            <ul className="flex flex-col items-center py-8 gap-6">
-              <li>
+            <ul className="flex flex-col items-center py-6 gap-2">
+              <li className="w-full">
                 <NavLink
                   to="/seller"
                   end
@@ -134,7 +155,7 @@ export default class SellerLayout extends Component<
                   Dashboard
                 </NavLink>
               </li>
-              <li>
+              <li className="w-full">
                 <NavLink
                   to="/seller/orders"
                   className={this.getMobileNavClass}
@@ -143,7 +164,7 @@ export default class SellerLayout extends Component<
                   Pesanan
                 </NavLink>
               </li>
-              <li>
+              <li className="w-full">
                 <NavLink
                   to="/seller/products"
                   className={this.getMobileNavClass}
@@ -152,7 +173,7 @@ export default class SellerLayout extends Component<
                   Menu
                 </NavLink>
               </li>
-              <li>
+              <li className="w-full">
                 <NavLink
                   to="/seller/promos"
                   className={this.getMobileNavClass}
@@ -164,26 +185,38 @@ export default class SellerLayout extends Component<
               <li className="w-full flex justify-center pt-6 border-t border-white/10 mt-2">
                 <Link
                   to="/seller/profile"
-                  className="flex items-center gap-3"
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 px-6 py-3 rounded-full transition-colors"
                   onClick={this.closeMenu}
                 >
-                  <div className="bg-white rounded-full w-12 h-12 flex justify-center items-center overflow-hidden shadow-md">
+                  <div className="bg-white rounded-full w-10 h-10 flex justify-center items-center overflow-hidden shadow-md">
                     <img
                       src={iconProfile}
                       alt="Seller Profile"
-                      className="w-8 h-8 object-contain"
+                      className="w-7 h-7 object-contain"
                     />
                   </div>
-                  <span className="text-white font-medium">Profil Kantin</span>
+                  <span className="text-white font-medium">
+                    {storeName ? storeName : "Profil Kantin"}
+                  </span>
                 </Link>
               </li>
             </ul>
           </div>
         </nav>
 
-        {/* Konten Halaman Admin - Di-render di dalam tag main ini */}
-        <main className="flex-1 w-full max-w-7xl mx-auto py-8 px-6 lg:px-8">
-          <Outlet />
+        <main className="flex-1 w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 relative">
+          <Suspense
+            fallback={
+              <div className="flex flex-col justify-center items-center h-[60vh] w-full">
+                <div className="animate-spin rounded-full h-14 w-14 border-4 border-gray-200 border-t-[#1B2B65]"></div>
+                <p className="mt-4 text-[#1B2B65] font-bold animate-pulse tracking-wide">
+                  Membuka Dasbor...
+                </p>
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     );

@@ -1,5 +1,5 @@
 import { ApiService } from "./ApiService";
-import type { UMKM } from "../domain/UMKM";
+import type { UMKM, OperatingHours } from "../domain/UMKM";
 
 export interface UMKMCreateRequest {
   name: string;
@@ -24,8 +24,8 @@ export class UMKMService extends ApiService {
     return this.get<UMKM[]>("/umkm/");
   }
 
-  async toggleStoreStatus(umkmId: number): Promise<UMKM> {
-    return this.patch<UMKM>(`/umkm/${umkmId}/toggle-status`);
+  async updateOperatingHours(hours: OperatingHours): Promise<UMKM> {
+    return this.put<UMKM>("/umkm/me/operating-hours", hours);
   }
 }
 

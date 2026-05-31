@@ -84,6 +84,10 @@ export default class ProfilePage extends Component<{}, ProfilePageState> {
       const updatedUser = await this.authService.updateMe(this.state.editForm);
       this.setState({
         user: updatedUser,
+        editForm: {
+          name: updatedUser.name || "",
+          phone: updatedUser.phone || "",
+        },
         isEditing: false,
       });
     } catch (err: any) {

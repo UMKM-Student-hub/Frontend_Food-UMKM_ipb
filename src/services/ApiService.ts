@@ -59,4 +59,14 @@ export class ApiService {
       return new Error(`HTTP Error ${res.status}: ${res.statusText}`);
     }
   }
+
+  protected async put<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw await this.parseError(res);
+    return res.json();
+  }
 }

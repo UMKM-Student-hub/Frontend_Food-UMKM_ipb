@@ -322,9 +322,13 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
     const { order, umkmName, imageUrlMap, onMarkDone } = this.props;
     const showReviewSection = order.status === OrderStatus.DONE;
 
+    const cancellationReason = order.rejection_reason?.trim()
+      ? order.rejection_reason
+      : "Penjual membatalkan pesanan ini tanpa memberikan alasan spesifik.";
+
     return (
       <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col mb-4 hover:shadow-md transition-shadow">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-gray-50 pb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-50 pb-4">
           <div>
             <h3 className="text-[#1B2B65] text-lg font-extrabold tracking-wide mb-1">
               {umkmName}
@@ -347,6 +351,35 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
             )}
           </div>
         </div>
+
+        {order.status === OrderStatus.CANCELLED && (
+          <div className="mb-6 bg-red-50 border border-red-100 rounded-2xl p-4 md:p-5 flex items-start gap-4">
+            <div className="bg-red-100 p-2 rounded-full shrink-0">
+              <svg
+                className="w-6 h-6 text-red-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm md:text-base font-bold text-red-800 mb-1">
+                Pesanan Dibatalkan oleh Kantin
+              </p>
+              <p className="text-sm font-medium text-red-600 leading-relaxed">
+                <span className="font-bold mr-1">Alasan:</span>
+                {cancellationReason}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-8">
           {order.items &&
@@ -387,9 +420,11 @@ export class OrderCard extends Component<OrderCardProps, OrderCardState> {
                       </p>
 
                       {item.notes && item.notes.trim() !== "" && (
-                        <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 w-fit mb-1.5">
-                          <p className="text-gray-500 text-xs font-medium italic">
-                            <span className="font-bold mr-1">Catatan:</span>
+                        <div className="bg-yellow-50/50 border border-yellow-100 rounded-lg px-3 py-2 w-fit mb-1.5">
+                          <p className="text-gray-600 text-xs font-medium italic">
+                            <span className="font-bold mr-1 text-[#FFB20E]">
+                              Catatan:
+                            </span>
                             {item.notes}
                           </p>
                         </div>

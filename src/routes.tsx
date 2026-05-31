@@ -1,34 +1,72 @@
-import { createBrowserRouter, Navigate, useParams } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import {
+  createBrowserRouter,
+  Navigate,
+  useParams,
+  useRouteError,
+  isRouteErrorResponse,
+} from "react-router-dom";
+import { lazy } from "react";
 import MainLayout from "./layouts/MainLayout.tsx";
 import SellerLayout from "./layouts/SellerLayout.tsx";
 import { SellerGuard } from "./guards/SellerGuard.tsx";
 import { BuyerGuard } from "./guards/BuyerGuard.tsx";
+import { ErrorBanner } from "./components/common/ErrorBanner";
+import { Navbar } from "./components/common/Navbar";
+import { Footer } from "./components/common/Footer";
 
-const Loader = () => (
-  <div className="flex justify-center items-center h-screen text-green-700">
-    Loading UniBites...
-  </div>
-);
+const GlobalErrorPage = () => {
+  const error = useRouteError();
+  let errorMessage = "Terjadi kesalahan sistem yang tidak terduga.";
+
+  if (isRouteErrorResponse(error)) {
+    if (error.status === 404) {
+      errorMessage =
+        "Halaman yang Anda cari tidak ditemukan atau telah dipindahkan.";
+    } else {
+      errorMessage = `${error.status} - ${error.statusText || error.data}`;
+    }
+  } else if (error instanceof Error) {
+    errorMessage = error.message;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#FFFCF5] font-sans">
+      <Navbar />
+      <div className="grow flex flex-col items-center justify-center p-6">
+        <ErrorBanner
+          message={errorMessage}
+          onRetry={() => window.location.reload()}
+        />
+        <a
+          href="/"
+          className="mt-6 bg-[#1B2B65] text-white px-8 py-3 rounded-full font-bold hover:bg-[#102A71] transition-colors shadow-md"
+        >
+          Kembali ke Beranda
+        </a>
+      </div>
+      <Footer />
+    </div>
+  );
+};
 
 const HomePage = lazy(() => import("./pages/buyer/Home.tsx"));
 const ProfilePage = lazy(() => import("./pages/buyer/ProfilePage.tsx"));
 const AuthPage = lazy(() =>
-  import("./pages/auth/UserLoginRegister.tsx").then((module) => ({
-    default: module.AuthPage,
+  import("./pages/auth/UserLoginRegister.tsx").then((m) => ({
+    default: m.AuthPage,
   })),
 );
 const ProductDetailPage = lazy(
   () => import("./pages/buyer/ProductDetailPage.tsx"),
 );
 const MyOrdersPage = lazy(() =>
-  import("./pages/buyer/OrderPage.tsx").then((module) => ({
-    default: module.MyOrdersPage,
+  import("./pages/buyer/OrderPage.tsx").then((m) => ({
+    default: m.MyOrdersPage,
   })),
 );
 const AdminLoginRegister = lazy(() =>
-  import("./pages/auth/AdminLoginRegister.tsx").then((module) => ({
-    default: module.RegisterAdminPage,
+  import("./pages/auth/AdminLoginRegister.tsx").then((m) => ({
+    default: m.RegisterAdminPage,
   })),
 );
 
@@ -48,76 +86,35 @@ const SellerProfilePage = lazy(() => import("./pages/seller/ProfilePage.tsx"));
 
 const ProductDetailPageWrapper = () => {
   const params = useParams();
-  return (
-    <Suspense fallback={<Loader />}>
-      <ProductDetailPage params={params} />
-    </Suspense>
-  );
+  return <ProductDetailPage params={params} />;
 };
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
+    errorElement: <GlobalErrorPage />,
     children: [
-      {
-        index: true,
-        element: <Navigate to="/home" replace />,
-      },
-      {
-        path: "login",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <AuthPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "register",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <AuthPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "register-mitra",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <AdminLoginRegister />
-          </Suspense>
-        ),
-      },
-      {
-        path: "home",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <HomePage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "catalog/:umkmId",
-        element: <ProductDetailPageWrapper />,
-      },
+      { index: true, element: <Navigate to="/home" replace /> },
+      { path: "login", element: <AuthPage /> },
+      { path: "register", element: <AuthPage /> },
+      { path: "register-mitra", element: <AdminLoginRegister /> },
+      { path: "home", element: <HomePage /> },
+      { path: "catalog/:umkmId", element: <ProductDetailPageWrapper /> },
       {
         path: "my-orders",
         element: (
-          <Suspense fallback={<Loader />}>
-            <BuyerGuard>
-              <MyOrdersPage />
-            </BuyerGuard>
-          </Suspense>
+          <BuyerGuard>
+            <MyOrdersPage />
+          </BuyerGuard>
         ),
       },
       {
         path: "profile",
         element: (
-          <Suspense fallback={<Loader />}>
-            <BuyerGuard>
-              <ProfilePage />
-            </BuyerGuard>
-          </Suspense>
+          <BuyerGuard>
+            <ProfilePage />
+          </BuyerGuard>
         ),
       },
     ],
@@ -129,57 +126,14 @@ const router = createBrowserRouter([
         <SellerLayout />
       </SellerGuard>
     ),
+    errorElement: <GlobalErrorPage />,
     children: [
-      {
-        index: true,
-        element: (
-          <Suspense fallback={<Loader />}>
-            <SellerDashboardPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "orders",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <IncomingOrdersPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "products",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <ProductManagementPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "promos",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <PromoManagementPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "profile",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <SellerProfilePage />
-          </Suspense>
-        ),
-      },
+      { index: true, element: <SellerDashboardPage /> },
+      { path: "orders", element: <IncomingOrdersPage /> },
+      { path: "products", element: <ProductManagementPage /> },
+      { path: "promos", element: <PromoManagementPage /> },
+      { path: "profile", element: <SellerProfilePage /> },
     ],
-  },
-  {
-    path: "*",
-    element: (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
-        <h1 className="text-4xl font-bold text-[#1B2B65] mb-4">404</h1>
-        <p className="text-xl text-gray-600">Halaman Tidak Ditemukan</p>
-      </div>
-    ),
   },
 ]);
 

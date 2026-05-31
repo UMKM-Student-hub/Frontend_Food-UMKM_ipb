@@ -6,12 +6,14 @@ import type { UMKM } from "../../domain/UMKM";
 import type { MenuItem } from "../../domain/MenuItem";
 import { ProductCategory } from "../../domain/enums";
 import { withRouter } from "../../utils/withRouter";
+
 import { UMKMProfileHeader } from "../../components/buyer/UMKMProfileHeader";
 import { ReviewModal } from "../../components/buyer/ReviewModal";
 import { MenuFilterBar } from "../../components/buyer/MenuFilterBar";
 import { MenuItemCard } from "../../components/buyer/MenuItemCard";
 import { DetailProduk } from "../../components/buyer/DetailProduk";
 import { DetailKeranjang } from "../../components/buyer/DetailKeranjang";
+import { ClosedStoreModal } from "../../components/buyer/ClosedStoreModal";
 import type { CartItem } from "../../components/buyer/DetailKeranjang";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
 import { ErrorBanner } from "../../components/common/ErrorBanner";
@@ -37,6 +39,7 @@ interface ProductDetailState {
   isDetailKeranjangOpen: boolean;
   isSubmittingOrder: boolean;
   isReviewModalOpen: boolean;
+  isClosedModalOpen: boolean;
 }
 
 class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
@@ -62,11 +65,24 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       isDetailKeranjangOpen: false,
       isSubmittingOrder: false,
       isReviewModalOpen: false,
+      isClosedModalOpen: false,
     };
   }
 
   async componentDidMount() {
     await this.fetchPageData();
+  }
+
+  private parseBoolean(value: any): boolean {
+    if (value === true || value === 1 || value === "1") return true;
+    if (String(value).toLowerCase() === "true") return true;
+    return false;
+  }
+
+  private isStoreOpen(): boolean {
+    const { umkm } = this.state;
+    if (!umkm) return false;
+    return this.parseBoolean((umkm as any).is_open ?? (umkm as any).isOpen);
   }
 
   private fetchPageData = async (): Promise<void> => {
@@ -141,6 +157,10 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
   };
 
   private handleOpenDetailProduk = (item: MenuItem): void => {
+    if (!this.isStoreOpen()) {
+      this.setState({ isClosedModalOpen: true });
+      return;
+    }
     this.setState({ selectedProduct: item, isDetailProdukOpen: true });
   };
 
@@ -164,11 +184,20 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
     this.setState({ isReviewModalOpen: false });
   };
 
+  private handleCloseClosedStoreModal = (): void => {
+    this.setState({ isClosedModalOpen: false });
+  };
+
   private handleAddToCart = (
     item: MenuItem,
     quantity: number,
     note: string = "",
   ): void => {
+    if (!this.isStoreOpen()) {
+      this.setState({ isClosedModalOpen: true, isDetailProdukOpen: false });
+      return;
+    }
+
     const token = localStorage.getItem("access_token");
 
     if (!token || token === "null") {
@@ -237,6 +266,11 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
     paymentMethod: string,
     paymentProof: File | null,
   ): Promise<void> => {
+    if (!this.isStoreOpen()) {
+      this.setState({ isClosedModalOpen: true, isDetailKeranjangOpen: false });
+      return;
+    }
+
     const { umkm, cartItems } = this.state;
     if (!umkm || cartItems.length === 0) return;
 
@@ -291,6 +325,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       isDetailKeranjangOpen,
       isSubmittingOrder,
       isReviewModalOpen,
+      isClosedModalOpen,
     } = this.state;
 
     if (isLoading) return <LoadingSpinner size="lg" />;
@@ -310,7 +345,13 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
     const totalCartItems = this.getTotalCartItems();
 
     return (
-      <div className="bg-[#FFFCF5] min-h-screen font-sans pb-24">
+      <div className="bg-[#FFFCF5] min-h-screen font-sans pb-24 relative">
+        <ClosedStoreModal
+          isOpen={isClosedModalOpen}
+          storeName={umkm.name}
+          onClose={this.handleCloseClosedStoreModal}
+        />
+
         <div className="bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-10 lg:px-16">
             <UMKMProfileHeader
