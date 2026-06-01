@@ -14,6 +14,7 @@ import { MenuItemCard } from "../../components/buyer/MenuItemCard";
 import { DetailProduk } from "../../components/buyer/DetailProduk";
 import { DetailKeranjang } from "../../components/buyer/DetailKeranjang";
 import { ClosedStoreModal } from "../../components/buyer/ClosedStoreModal";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import type { CartItem } from "../../components/buyer/DetailKeranjang";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
 import { ErrorBanner } from "../../components/common/ErrorBanner";
@@ -40,6 +41,8 @@ interface ProductDetailState {
   isSubmittingOrder: boolean;
   isReviewModalOpen: boolean;
   isClosedModalOpen: boolean;
+  isAuthModalOpen: boolean;
+  authModalItemName: string;
 }
 
 class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
@@ -66,6 +69,8 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       isSubmittingOrder: false,
       isReviewModalOpen: false,
       isClosedModalOpen: false,
+      isAuthModalOpen: false,
+      authModalItemName: "",
     };
   }
 
@@ -201,13 +206,7 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
     const token = localStorage.getItem("access_token");
 
     if (!token || token === "null") {
-      if (
-        window.confirm(
-          `Login diperlukan untuk memesan ${item.name}. Ke halaman login?`,
-        )
-      ) {
-        this.props.navigate("/login");
-      }
+      this.setState({ isAuthModalOpen: true, authModalItemName: item.name });
       return;
     }
 
@@ -326,6 +325,8 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
       isSubmittingOrder,
       isReviewModalOpen,
       isClosedModalOpen,
+      isAuthModalOpen,
+      authModalItemName,
     } = this.state;
 
     if (isLoading) return <LoadingSpinner size="lg" />;
@@ -346,6 +347,22 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
 
     return (
       <div className="bg-[#FFFCF5] min-h-screen font-sans pb-24 relative">
+        <ConfirmModal
+          isOpen={isAuthModalOpen}
+          title="Login Diperlukan"
+          message={
+            <span>
+              Kamu harus login terlebih dahulu untuk memesan{" "}
+              <strong>{authModalItemName}</strong>. Lanjut ke halaman login?
+            </span>
+          }
+          confirmText="Ke Login"
+          cancelText="Nanti Saja"
+          type="warning"
+          onConfirm={() => this.props.navigate("/login")}
+          onClose={() => this.setState({ isAuthModalOpen: false })}
+        />
+
         <ClosedStoreModal
           isOpen={isClosedModalOpen}
           storeName={umkm.name}

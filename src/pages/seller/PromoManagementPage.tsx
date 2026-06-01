@@ -6,6 +6,7 @@ import type { MenuItem } from "../../domain/MenuItem";
 import { PageHeader } from "../../components/seller/PageHeader";
 import { PromoTableRow } from "../../components/seller/PromoTableRow";
 import { PromoFormModal } from "../../components/seller/PromoFormModal";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 interface PromoManagementPageProps {}
 
@@ -16,6 +17,8 @@ interface PromoManagementPageState {
   error: string | null;
   isModalOpen: boolean;
   isSubmitting: boolean;
+  isDeactivateModalOpen: boolean;
+  deactivatePromoId: number | null;
 }
 
 export default class PromoManagementPage extends Component<
@@ -34,6 +37,8 @@ export default class PromoManagementPage extends Component<
       error: null,
       isModalOpen: false,
       isSubmitting: false,
+      isDeactivateModalOpen: false,
+      deactivatePromoId: null,
     };
     this.promoService = new PromoService();
     this.catalogService = new CatalogService();
@@ -84,17 +89,32 @@ export default class PromoManagementPage extends Component<
     }
   };
 
-  private handleDeactivatePromo = async (id: number): Promise<void> => {
-    if (!window.confirm("Apakah Anda yakin ingin menonaktifkan promo ini?"))
-      return;
+  private openDeactivateModal = (id: number): void => {
+    this.setState({ isDeactivateModalOpen: true, deactivatePromoId: id });
+  };
+
+  private closeDeactivateModal = (): void => {
+    this.setState({ isDeactivateModalOpen: false, deactivatePromoId: null });
+  };
+
+  private handleDeactivatePromo = async (): Promise<void> => {
+    const { deactivatePromoId } = this.state;
+    if (deactivatePromoId === null) return;
+
+    this.setState({ isSubmitting: true });
     try {
-      await this.promoService.deactivatePromo(id);
+      await this.promoService.deactivatePromo(deactivatePromoId);
       this.setState((prevState) => ({
-        promos: prevState.promos.filter((p) => p.id !== id),
+        promos: prevState.promos.filter((p) => p.id !== deactivatePromoId),
+        isDeactivateModalOpen: false,
+        deactivatePromoId: null,
       }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal memproses";
-      alert(`Gagal: ${msg}`);
+      this.setState({ error: `Gagal menonaktifkan: ${msg}` });
+      this.closeDeactivateModal();
+    } finally {
+      this.setState({ isSubmitting: false });
     }
   };
 
@@ -102,11 +122,30 @@ export default class PromoManagementPage extends Component<
   private closeModal = () => this.setState({ isModalOpen: false });
 
   render() {
-    const { promos, myProducts, isLoading, error, isModalOpen, isSubmitting } =
-      this.state;
+    const {
+      promos,
+      myProducts,
+      isLoading,
+      error,
+      isModalOpen,
+      isSubmitting,
+      isDeactivateModalOpen,
+    } = this.state;
 
     return (
       <div className="w-full relative pb-20 px-4 md:px-0">
+        <ConfirmModal
+          isOpen={isDeactivateModalOpen}
+          title="Matikan Promo?"
+          message="Apakah Anda yakin ingin menonaktifkan promo ini? Promo yang dimatikan tidak dapat diaktifkan kembali."
+          confirmText="Ya, Matikan"
+          cancelText="Batal"
+          type="danger"
+          isLoading={isSubmitting}
+          onConfirm={this.handleDeactivatePromo}
+          onClose={this.closeDeactivateModal}
+        />
+
         <PromoFormModal
           isOpen={isModalOpen}
           myProducts={myProducts}
@@ -190,7 +229,7 @@ export default class PromoManagementPage extends Component<
                       <PromoTableRow
                         key={promo.id}
                         promo={promo}
-                        onDeactivate={this.handleDeactivatePromo}
+                        onDeactivate={this.openDeactivateModal}
                       />
                     ))
                   )}
