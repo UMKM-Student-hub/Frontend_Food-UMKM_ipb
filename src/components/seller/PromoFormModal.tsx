@@ -5,10 +5,9 @@ import { DiscountType } from "../../domain/enums";
 
 interface PromoFormModalProps {
   isOpen: boolean;
-  myProducts: MenuItem[]; // Daftar produk untuk dropdown
+  myProducts: MenuItem[];
   isSubmitting: boolean;
   onClose: () => void;
-  // Perhatikan: Payload diubah menjadi FormData untuk mendukung upload file
   onSave: (payload: FormData) => void;
 }
 
@@ -45,7 +44,6 @@ export class PromoFormModal extends Component<
     this.state = { ...INITIAL_STATE };
   }
 
-  // Reset form setiap kali modal dibuka kembali
   componentDidUpdate(prevProps: PromoFormModalProps) {
     if (this.props.isOpen && !prevProps.isOpen) {
       this.setState({ ...INITIAL_STATE });
@@ -62,7 +60,6 @@ export class PromoFormModal extends Component<
     >);
   };
 
-  // Handler khusus untuk input file (Upload Banner)
   private handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -85,7 +82,6 @@ export class PromoFormModal extends Component<
     } = this.state;
     const { onSave } = this.props;
 
-    // --- VALIDASI FRONTEND ---
     if (
       !menu_item_id ||
       !name ||
@@ -116,7 +112,7 @@ export class PromoFormModal extends Component<
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset jam agar validasi hari ini akurat
+    today.setHours(0, 0, 0, 0);
 
     if (endDateObj < today) {
       this.setState({
@@ -132,7 +128,6 @@ export class PromoFormModal extends Component<
       return;
     }
 
-    // --- BUNGKUS DATA KE DALAM FORMDATA ---
     const formData = new FormData();
     formData.append("menu_item_id", menu_item_id);
     formData.append("name", name);
@@ -165,7 +160,6 @@ export class PromoFormModal extends Component<
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
-        {/* Container Modal (Kuning UniBites) */}
         <div className="bg-[#FFD13B] w-full max-w-4xl rounded-[32px] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
           <button
             onClick={onClose}
@@ -179,7 +173,6 @@ export class PromoFormModal extends Component<
             onSubmit={this.handleSubmit}
             className="overflow-y-auto px-10 py-10"
           >
-            {/* --- Bagian Atas: Upload Foto Promo --- */}
             <div className="flex flex-col items-center mb-8">
               <label
                 htmlFor="promo_photo_upload"
@@ -218,7 +211,6 @@ export class PromoFormModal extends Component<
                 Upload Banner Promo
               </h2>
 
-              {/* Input file yang disembunyikan */}
               <input
                 id="promo_photo_upload"
                 type="file"
@@ -228,16 +220,13 @@ export class PromoFormModal extends Component<
               />
             </div>
 
-            {/* --- Pesan Error Validasi --- */}
             {errorMessage && (
               <div className="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md font-medium shadow-sm">
                 {errorMessage}
               </div>
             )}
 
-            {/* --- Bagian Bawah: Grid Form 2 Kolom --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 text-[#1B2B65] font-bold">
-              {/* Kolom Kiri */}
               <div className="flex flex-col gap-6">
                 <div>
                   <label htmlFor="promo_name" className="block mb-2 text-lg">
@@ -309,7 +298,6 @@ export class PromoFormModal extends Component<
                 </div>
               </div>
 
-              {/* Kolom Kanan */}
               <div className="flex flex-col gap-6">
                 <div>
                   <label htmlFor="discount_type" className="block mb-2 text-lg">
@@ -396,7 +384,6 @@ export class PromoFormModal extends Component<
               </div>
             </div>
 
-            {/* Tombol Simpan */}
             <div className="mt-10 flex justify-center">
               <button
                 type="submit"

@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 
 interface ErrorBannerProps {
   message: string;
-  onRetry?: () => void; // Fungsi opsional jika parent ingin mengulang fetch
+  onRetry?: () => void;
 }
 
 export class ErrorBanner extends Component<ErrorBannerProps> {
@@ -13,7 +13,6 @@ export class ErrorBanner extends Component<ErrorBannerProps> {
       <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4 rounded-r-md shadow-sm w-full max-w-3xl mx-auto">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            {/* Icon Alert/Warning */}
             <svg 
               className="h-5 w-5 text-red-500 mr-3 shrink-0" 
               fill="currentColor" 
@@ -26,7 +25,6 @@ export class ErrorBanner extends Component<ErrorBannerProps> {
             </p>
           </div>
           
-          {/* Render tombol Coba Lagi hanya jika props onRetry diberikan */}
           {onRetry && (
             <button 
               onClick={onRetry} 

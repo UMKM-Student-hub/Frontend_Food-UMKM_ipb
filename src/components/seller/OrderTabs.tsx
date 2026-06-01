@@ -1,11 +1,9 @@
 import { Component } from "react";
 
-// Tipe data khusus untuk merepresentasikan 4 Tab yang ada di UI
 export type TabType = "masuk" | "proses" | "selesai" | "batal";
 
 interface OrderTabsProps {
   activeTab: TabType;
-  // counts: Objek untuk mengetahui apakah ada notifikasi/titik merah yang perlu ditampilkan
   counts: {
     masuk: number;
     proses: number;
@@ -14,7 +12,6 @@ interface OrderTabsProps {
 }
 
 export class OrderTabs extends Component<OrderTabsProps> {
-  // Method pembantu untuk merender setiap item tab agar kode lebih DRY (Don't Repeat Yourself)
   private renderTabItem = (
     id: TabType,
     label: string,
@@ -33,7 +30,6 @@ export class OrderTabs extends Component<OrderTabsProps> {
         }`}
       >
         {label}
-        {/* Titik Merah Notifikasi (Dirender hanya jika ada orderan di tab tersebut) */}
         {hasNotification && (
           <span className="w-3 h-3 bg-red-500 rounded-full inline-block animate-pulse shadow-sm"></span>
         )}
@@ -50,7 +46,6 @@ export class OrderTabs extends Component<OrderTabsProps> {
           {this.renderTabItem("masuk", "Pesanan Masuk", counts.masuk > 0)}
           {this.renderTabItem("proses", "Dalam Proses", counts.proses > 0)}
 
-          {/* Tab Selesai dan Batal biasanya tidak perlu titik merah notifikasi */}
           {this.renderTabItem("selesai", "Selesai", false)}
           {this.renderTabItem("batal", "Batal", false)}
         </div>

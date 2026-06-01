@@ -9,7 +9,6 @@ interface ProductFormModalProps {
   initialData: MenuItem | null;
   isSubmitting: boolean;
   onClose: () => void;
-  // Perhatikan: Payload sekarang adalah FormData, bukan MenuItemCreateRequest
   onSave: (payload: FormData, id?: number) => void;
 }
 
@@ -19,8 +18,8 @@ interface ProductFormModalState {
   stock: string;
   category: string;
   description: string;
-  photo_file: File | null; // Untuk menyimpan file fisik
-  preview_url: string; // Untuk preview gambar di UI
+  photo_file: File | null;
+  preview_url: string;
 }
 
 const INITIAL_STATE: ProductFormModalState = {
@@ -54,7 +53,7 @@ export class ProductFormModal extends Component<
           category,
           description: description || "",
           photo_file: null,
-          preview_url: photo_url || "", // Tampilkan gambar lama jika ada
+          preview_url: photo_url || "",
         });
       } else {
         this.setState({ ...INITIAL_STATE });
@@ -62,7 +61,6 @@ export class ProductFormModal extends Component<
     }
   }
 
-  // Handler untuk Input Teks & Select biasa
   private handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ): void => {
@@ -73,12 +71,10 @@ export class ProductFormModal extends Component<
     >);
   };
 
-  // Handler KHUSUS untuk Input File (Gambar)
   private handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
 
-      // Buat URL sementara untuk preview di dalam browser
       const preview_url = URL.createObjectURL(file);
       this.setState({ photo_file: file, preview_url });
     }
@@ -96,7 +92,6 @@ export class ProductFormModal extends Component<
       return;
     }
 
-    // --- BUNGKUS DATA KE DALAM FORMDATA ---
     const formData = new FormData();
     formData.append("name", name);
     formData.append("price", price);
@@ -105,7 +100,6 @@ export class ProductFormModal extends Component<
 
     if (description) formData.append("description", description);
 
-    // Jika ada file foto yang dipilih, masukkan ke form
     if (photo_file) {
       formData.append("photo", photo_file);
     }
@@ -140,7 +134,6 @@ export class ProductFormModal extends Component<
             onSubmit={this.handleSubmit}
             className="overflow-y-auto px-10 py-10"
           >
-            {/* --- Bagian Atas: Upload Foto dengan Preview --- */}
             <div className="flex flex-col items-center mb-10">
               <label
                 htmlFor="photo_upload"
@@ -148,7 +141,6 @@ export class ProductFormModal extends Component<
                 title="Klik untuk memilih foto"
               >
                 {preview_url ? (
-                  // Tampilkan Preview Foto
                   <>
                     <img
                       src={preview_url}
@@ -160,7 +152,6 @@ export class ProductFormModal extends Component<
                     </div>
                   </>
                 ) : (
-                  // Tampilkan Ikon Kamera Jika Kosong
                   <svg
                     className="w-10 h-10 text-gray-400"
                     fill="none"
@@ -187,19 +178,16 @@ export class ProductFormModal extends Component<
                 Upload Photo Menu
               </h2>
 
-              {/* Input file yang disembunyikan */}
               <input
                 id="photo_upload"
                 type="file"
-                accept="image/*" // Hanya menerima file gambar
+                accept="image/*"
                 onChange={this.handleFileChange}
                 className="hidden"
               />
             </div>
 
-            {/* --- Bagian Bawah: Grid Form 2 Kolom --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 text-[#1B2B65] font-bold">
-              {/* Kolom Kiri */}
               <div className="flex flex-col gap-6">
                 <div>
                   <label className="block mb-2 text-lg">Nama Menu</label>
@@ -272,7 +260,6 @@ export class ProductFormModal extends Component<
                 </div>
               </div>
 
-              {/* Kolom Kanan */}
               <div className="flex flex-col gap-6">
                 <div>
                   <label className="block mb-2 text-lg">Harga (Rp)</label>
@@ -301,7 +288,6 @@ export class ProductFormModal extends Component<
               </div>
             </div>
 
-            {/* Tombol Simpan */}
             <div className="mt-10 flex justify-center">
               <button
                 type="submit"

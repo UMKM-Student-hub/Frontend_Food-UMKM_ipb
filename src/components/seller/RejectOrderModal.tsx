@@ -4,7 +4,7 @@ import type { ChangeEvent, FormEvent } from "react";
 interface RejectOrderModalProps {
   isOpen: boolean;
   orderId: number | null;
-  isSubmitting: boolean; // Untuk men-disable tombol saat API sedang loading
+  isSubmitting: boolean;
   onClose: () => void;
   onConfirm: (orderId: number, reason: string) => void;
 }
@@ -26,7 +26,6 @@ export class RejectOrderModal extends Component<
     };
   }
 
-  // Lifecycle Method: Reset isi form setiap kali modal baru dibuka
   componentDidUpdate(prevProps: RejectOrderModalProps) {
     if (this.props.isOpen && !prevProps.isOpen) {
       this.setState({ reason: "", errorMessage: null });
@@ -42,7 +41,6 @@ export class RejectOrderModal extends Component<
     const { reason } = this.state;
     const { orderId, onConfirm } = this.props;
 
-    // Validasi Frontend: Pastikan alasan tidak kosong dan masuk akal
     if (!reason.trim()) {
       this.setState({ errorMessage: "Alasan penolakan tidak boleh kosong." });
       return;
@@ -66,9 +64,7 @@ export class RejectOrderModal extends Component<
 
     return (
       <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
-        {/* Modal Container */}
         <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-          {/* Header Modal (Warna Merah untuk Aksi Destruktif) */}
           <div className="bg-red-50 px-6 py-4 border-b border-red-100 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="bg-red-100 p-2 rounded-full text-red-600">
@@ -97,7 +93,6 @@ export class RejectOrderModal extends Component<
             </button>
           </div>
 
-          {/* Form Content */}
           <form onSubmit={this.handleSubmit} className="p-6">
             <p className="text-gray-600 mb-4 font-medium text-sm">
               Pesanan{" "}
@@ -126,14 +121,12 @@ export class RejectOrderModal extends Component<
               } focus:outline-none focus:ring-2 bg-gray-50 transition-colors resize-none`}
             />
 
-            {/* Pesan Error Validasi */}
             {errorMessage && (
               <p className="text-red-500 text-sm mt-2 font-medium">
                 {errorMessage}
               </p>
             )}
 
-            {/* Tombol Aksi */}
             <div className="flex justify-end gap-3 mt-8">
               <button
                 type="button"

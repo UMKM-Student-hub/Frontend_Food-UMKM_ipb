@@ -1,15 +1,14 @@
 import React, { Component } from 'react';
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg'; // Mendukung 3 ukuran sesuai spesifikasi F.2
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export class LoadingSpinner extends Component<LoadingSpinnerProps> {
   render() {
     const { size = 'md' } = this.props;
     
-    // Menentukan ukuran spinner berdasarkan props
-    let sizeClass = 'h-8 w-8'; // default (md)
+    let sizeClass = 'h-8 w-8';
     if (size === 'sm') sizeClass = 'h-5 w-5';
     if (size === 'lg') sizeClass = 'h-12 w-12';
 
