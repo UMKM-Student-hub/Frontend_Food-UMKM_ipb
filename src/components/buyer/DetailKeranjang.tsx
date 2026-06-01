@@ -1,5 +1,6 @@
 import { Component } from "react";
 import type { MenuItem } from "../../domain/MenuItem";
+import { DiscountType } from "../../domain/enums";
 
 export interface CartItem {
   item: MenuItem;
@@ -35,6 +36,15 @@ export class DetailKeranjang extends Component<
     };
   }
 
+  private getDiscountedPrice(item: MenuItem): number {
+    if (!item.active_promo) return item.price;
+    const promo = item.active_promo;
+    if (promo.discount_type === DiscountType.PERCENTAGE) {
+      return item.price - (item.price * promo.discount_value) / 100;
+    }
+    return Math.max(0, item.price - promo.discount_value);
+  }
+
   private formatPrice(price: number): string {
     return new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
@@ -43,7 +53,7 @@ export class DetailKeranjang extends Component<
 
   private getTotalPrice(): number {
     return this.props.cartItems.reduce(
-      (total, ci) => total + ci.item.price * ci.quantity,
+      (total, ci) => total + this.getDiscountedPrice(ci.item) * ci.quantity,
       0,
     );
   }
@@ -124,53 +134,76 @@ export class DetailKeranjang extends Component<
                 Keranjang masih kosong
               </div>
             ) : (
-              cartItems.map(({ item, quantity, note }) => (
-                <div
-                  key={item.id}
-                  className="flex flex-col border-b border-gray-100 pb-5"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-[#1B2B65] font-medium text-lg md:text-xl flex-1 truncate pr-4">
-                      {item.name}
+              cartItems.map(({ item, quantity, note }) => {
+                const finalPrice = this.getDiscountedPrice(item);
+                const hasPromo = !!item.active_promo;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="flex flex-col border-b border-gray-100 pb-5"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex flex-col flex-1 truncate pr-4">
+                        <span className="text-[#1B2B65] font-medium text-lg md:text-xl truncate">
+                          {item.name}
+                        </span>
+                        {hasPromo && (
+                          <span className="text-red-500 text-xs font-bold mt-0.5">
+                            ✨ Promo Diterapkan
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center border-[1.5px] border-[#1B2B65] rounded-full px-2 py-0.5 bg-white shrink-0 mr-4 md:mr-8">
+                        <button
+                          onClick={() =>
+                            onUpdateQuantity(item.id, quantity - 1)
+                          }
+                          disabled={isSubmitting}
+                          className="w-8 h-8 flex items-center justify-center text-[#FFB20E] font-black text-2xl hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 focus:outline-none pb-1"
+                        >
+                          −
+                        </button>
+                        <span className="text-[#1B2B65] font-bold w-6 text-center text-lg select-none">
+                          {quantity}
+                        </span>
+                        <button
+                          onClick={() =>
+                            onUpdateQuantity(item.id, quantity + 1)
+                          }
+                          disabled={quantity >= item.stock || isSubmitting}
+                          className="w-8 h-8 flex items-center justify-center text-[#FFB20E] font-black text-2xl hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 focus:outline-none pb-1"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col items-end shrink-0 w-24 md:w-32">
+                        {hasPromo && (
+                          <span className="text-gray-400 line-through text-xs md:text-sm font-semibold mb-0.5">
+                            {this.formatPrice(item.price * quantity)}
+                          </span>
+                        )}
+                        <span className="text-[#FFB20E] font-bold text-lg md:text-xl">
+                          {this.formatPrice(finalPrice * quantity)}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center border-[1.5px] border-[#1B2B65] rounded-full px-2 py-0.5 bg-white shrink-0 mr-4 md:mr-8">
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, quantity - 1)}
+                    <div className="w-full">
+                      <input
+                        type="text"
+                        value={note || ""}
+                        onChange={(e) => onUpdateNote(item.id, e.target.value)}
                         disabled={isSubmitting}
-                        className="w-8 h-8 flex items-center justify-center text-[#FFB20E] font-black text-2xl hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 focus:outline-none pb-1"
-                      >
-                        −
-                      </button>
-                      <span className="text-[#1B2B65] font-bold w-6 text-center text-lg select-none">
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, quantity + 1)}
-                        disabled={quantity >= item.stock || isSubmitting}
-                        className="w-8 h-8 flex items-center justify-center text-[#FFB20E] font-black text-2xl hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 focus:outline-none pb-1"
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <div className="text-[#FFB20E] font-bold text-lg md:text-xl w-20 md:w-28 text-right shrink-0">
-                      {this.formatPrice(item.price)}
+                        placeholder="Tambah catatan (opsional)..."
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-[#1B2B65] text-sm focus:outline-none focus:border-[#FFB20E] transition-all disabled:opacity-60"
+                      />
                     </div>
                   </div>
-
-                  <div className="w-full">
-                    <input
-                      type="text"
-                      value={note || ""}
-                      onChange={(e) => onUpdateNote(item.id, e.target.value)}
-                      disabled={isSubmitting}
-                      placeholder="Tambah catatan (opsional)..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-[#1B2B65] text-sm focus:outline-none focus:border-[#FFB20E] transition-all disabled:opacity-60"
-                    />
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -180,7 +213,7 @@ export class DetailKeranjang extends Component<
                 <span className="text-[#1B2B65] text-lg md:text-xl font-bold">
                   Subtotal
                 </span>
-                <span className="text-[#FFB20E] text-xl md:text-2xl font-bold w-20 md:w-28 text-right">
+                <span className="text-[#FFB20E] text-xl md:text-3xl font-black w-24 md:w-32 text-right">
                   {this.formatPrice(totalPrice)}
                 </span>
               </div>
