@@ -124,6 +124,27 @@ class ProductDetailPage extends Component<RouterProps, ProductDetailState> {
         averageRating,
         reviewCount,
       });
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const highlightId = searchParams.get("highlight");
+
+      if (highlightId) {
+        const targetMenu = menuData.find((m) => m.id === Number(highlightId));
+        if (targetMenu) {
+          if (
+            !this.parseBoolean(
+              (umkmData as any).is_open ?? (umkmData as any).isOpen,
+            )
+          ) {
+            this.setState({ isClosedModalOpen: true });
+          } else {
+            this.setState({
+              selectedProduct: targetMenu,
+              isDetailProdukOpen: true,
+            });
+          }
+        }
+      }
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Gagal memuat data kantin.";

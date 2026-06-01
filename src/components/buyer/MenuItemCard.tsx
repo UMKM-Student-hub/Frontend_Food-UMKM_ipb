@@ -1,6 +1,7 @@
 import { Component } from "react";
 import type { MouseEvent } from "react";
 import type { MenuItem } from "../../domain/MenuItem";
+import { DiscountType } from "../../domain/enums";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -21,6 +22,15 @@ export class MenuItemCard extends Component<
     this.state = {
       quantity: 1,
     };
+  }
+
+  private getDiscountedPrice(item: MenuItem): number {
+    if (!item.active_promo) return item.price;
+    const promo = item.active_promo;
+    if (promo.discount_type === DiscountType.PERCENTAGE) {
+      return item.price - (item.price * promo.discount_value) / 100;
+    }
+    return Math.max(0, item.price - promo.discount_value);
   }
 
   private handleIncrement = (e: MouseEvent<HTMLButtonElement>): void => {
@@ -78,6 +88,9 @@ export class MenuItemCard extends Component<
     const rawPhotoUrl = (item as any).photo_url || (item as any).photoUrl;
     const photoUrl = this.getFullImageUrl(rawPhotoUrl);
 
+    const finalPrice = this.getDiscountedPrice(item);
+    const hasPromo = !!item.active_promo;
+
     return (
       <div
         onClick={this.handleCardClick}
@@ -108,6 +121,12 @@ export class MenuItemCard extends Component<
             </div>
           )}
 
+          {hasPromo && (
+            <div className="absolute top-3 left-3 bg-red-500 text-white px-2.5 py-1 rounded-md text-[10px] font-black shadow-sm uppercase tracking-widest z-10">
+              Diskon Aktif!
+            </div>
+          )}
+
           {isOutOfStock && (
             <div className="absolute top-3 right-3 bg-red-500/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-black shadow-sm uppercase tracking-widest z-10">
               Habis
@@ -133,9 +152,22 @@ export class MenuItemCard extends Component<
             </p>
           </div>
 
-          <p className="text-[#FFB20E] font-black text-xl mt-auto">
-            Rp {Number(item.price).toLocaleString("id-ID")}
-          </p>
+          <div className="mt-auto flex flex-col">
+            {hasPromo ? (
+              <>
+                <span className="text-gray-400 line-through text-xs font-semibold mb-0.5">
+                  Rp {Number(item.price).toLocaleString("id-ID")}
+                </span>
+                <span className="text-[#FFB20E] font-black text-xl">
+                  Rp {Number(finalPrice).toLocaleString("id-ID")}
+                </span>
+              </>
+            ) : (
+              <span className="text-[#FFB20E] font-black text-xl">
+                Rp {Number(item.price).toLocaleString("id-ID")}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-between items-center p-4 pt-0 bg-white">
