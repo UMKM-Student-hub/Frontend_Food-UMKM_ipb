@@ -54,6 +54,7 @@ export default class CatalogPage extends Component<{}, CatalogPageState> {
 
   render() {
     const { searchKeyword, promos, isLoadingPromos, error } = this.state;
+    const isSearching = searchKeyword.trim().length > 0;
 
     return (
       <div className="min-h-screen bg-[#FFFCF5] flex flex-col font-sans">
@@ -73,33 +74,37 @@ export default class CatalogPage extends Component<{}, CatalogPageState> {
             </div>
           </div>
 
-          <section className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-10 md:pt-14 pb-12">
-            {isLoadingPromos ? (
-              <div className="text-center py-10 text-gray-500 font-semibold animate-pulse">
-                Memuat promo menarik...
-              </div>
-            ) : error ? (
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-center mb-6 border border-red-100 font-medium">
-                {error}
-              </div>
-            ) : promos.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 font-medium">
-                Belum ada promo aktif saat ini.
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {promos.slice(0, 4).map((promo) => (
-                  <PromoCard
-                    key={promo.id}
-                    promo={promo}
-                    expiryLabel={this.formatExpiry(promo.end_date)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+          {!isSearching && (
+            <section className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-10 md:pt-14 pb-12 animate-fadeIn">
+              {isLoadingPromos ? (
+                <div className="text-center py-10 text-gray-500 font-semibold animate-pulse">
+                  Memuat promo menarik...
+                </div>
+              ) : error ? (
+                <div className="bg-red-50 text-red-600 p-4 rounded-xl text-center mb-6 border border-red-100 font-medium">
+                  {error}
+                </div>
+              ) : promos.length === 0 ? (
+                <div className="text-center py-10 text-gray-400 font-medium">
+                  Belum ada promo aktif saat ini.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                  {promos.slice(0, 4).map((promo) => (
+                    <PromoCard
+                      key={promo.id}
+                      promo={promo}
+                      expiryLabel={this.formatExpiry(promo.end_date)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
-          <CatalogDashboard searchKeyword={searchKeyword} />
+          <div className={isSearching ? "pt-10 md:pt-14" : ""}>
+            <CatalogDashboard searchKeyword={searchKeyword} />
+          </div>
 
           <div className="pb-16 pt-8 bg-linear-to-b from-[#FFFCF5] to-[#FFF3D0]">
             <FeatureBanner />
