@@ -296,7 +296,7 @@ export class CatalogDashboard extends Component<
     const activeUmkms = isSearching ? umkms : umkms.slice(0, visibleCount);
 
     return (
-      <section className="bg-[#FFFCF5] min-h-screen w-full py-10 md:py-16">
+      <section className="bg-[#FFFCF5] min-h-screen w-full pt-6 pb-10 md:pt-8 md:pb-16">
         <div className="max-w-7xl mx-auto px-4 md:px-16 lg:px-16">
           <h1 className="text-3xl md:text-4xl font-extrabold text-[#1B2B65] mb-8 tracking-tight">
             Jajan dari Kantin Favoritmu Hari Ini!

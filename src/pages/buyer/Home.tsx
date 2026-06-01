@@ -75,7 +75,7 @@ export default class CatalogPage extends Component<{}, CatalogPageState> {
           </div>
 
           {!isSearching && (
-            <section className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-10 md:pt-14 pb-12 animate-fadeIn">
+            <section className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-10 md:pt-14 pb-6 animate-fadeIn">
               {isLoadingPromos ? (
                 <div className="text-center py-10 text-gray-500 font-semibold animate-pulse">
                   Memuat promo menarik...
