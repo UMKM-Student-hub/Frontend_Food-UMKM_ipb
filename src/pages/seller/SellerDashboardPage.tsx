@@ -12,11 +12,13 @@ import type { Promotion } from "../../domain/Promotion";
 import { PageHeader } from "../../components/seller/PageHeader";
 import { StatSummaryCard } from "../../components/seller/StatSummaryCard";
 import { OperatingHoursManager } from "../../components/seller/OperatingHoursManager";
+import { StoreReviewsCard } from "../../components/seller/StoreReviewsCard";
 
 interface State {
   totalRevenue: number;
   totalTransactions: number;
   umkm: UMKM | null;
+  allProducts: MenuItem[];
   recentProducts: MenuItem[];
   activePromos: Promotion[];
   isLoading: boolean;
@@ -36,6 +38,7 @@ export default class SellerDashboardPage extends Component<{}, State> {
     totalRevenue: 0,
     totalTransactions: 0,
     umkm: null,
+    allProducts: [],
     recentProducts: [],
     activePromos: [],
     isLoading: true,
@@ -80,6 +83,7 @@ export default class SellerDashboardPage extends Component<{}, State> {
           (s, o) => s + (Number(o.total_price) || 0),
           0,
         ),
+        allProducts: products as MenuItem[],
         recentProducts: (products as MenuItem[]).slice(0, 4),
         activePromos: (promos as Promotion[])
           .filter((p) => p.is_active)
@@ -117,6 +121,7 @@ export default class SellerDashboardPage extends Component<{}, State> {
       totalRevenue,
       totalTransactions,
       umkm,
+      allProducts,
       recentProducts,
       activePromos,
       isLoading,
@@ -176,7 +181,7 @@ export default class SellerDashboardPage extends Component<{}, State> {
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mt-10">
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 flex flex-col gap-6 lg:gap-8">
                 <OperatingHoursManager
                   isOpen={umkm?.is_open ?? false}
                   operatingHours={umkm?.operating_hours ?? null}
@@ -239,56 +244,60 @@ export default class SellerDashboardPage extends Component<{}, State> {
                   )}
                 </div>
 
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 w-full">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-black text-[#1B2B65]">
-                      Promo Aktif
-                    </h3>
-                    <Link
-                      to="/seller/promos"
-                      className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
-                    >
-                      Lihat Semua
-                      <span aria-hidden="true">&rarr;</span>
-                    </Link>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+                  <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 w-full flex flex-col h-full">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-black text-[#1B2B65]">
+                        Promo Aktif
+                      </h3>
+                      <Link
+                        to="/seller/promos"
+                        className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+                      >
+                        Lihat Semua
+                        <span aria-hidden="true">&rarr;</span>
+                      </Link>
+                    </div>
+
+                    {activePromos.length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center text-center py-10 text-gray-400 font-medium bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        Tidak ada promo aktif.
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar max-h-100">
+                        {activePromos.map((promo) => (
+                          <div
+                            key={promo.id}
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-linear-to-r from-yellow-50 to-white border border-yellow-100 shadow-sm"
+                          >
+                            <div className="w-12 h-12 rounded-full bg-[#FFB20E]/20 flex items-center justify-center shrink-0">
+                              <span className="text-xl">🎉</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-[#1B2B65] truncate">
+                                {promo.name}
+                              </h4>
+                              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                                S/d{" "}
+                                {new Date(promo.end_date).toLocaleDateString(
+                                  "id-ID",
+                                )}
+                              </p>
+                            </div>
+                            <div className="bg-[#1B2B65] text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
+                              {promo.discount_type === "PERCENTAGE"
+                                ? `${promo.discount_value}% OFF`
+                                : `- Rp ${Number(
+                                    promo.discount_value,
+                                  ).toLocaleString("id-ID")}`}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {activePromos.length === 0 ? (
-                    <div className="text-center py-10 text-gray-400 font-medium bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                      Tidak ada promo aktif.
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {activePromos.map((promo) => (
-                        <div
-                          key={promo.id}
-                          className="flex items-center gap-4 p-4 rounded-2xl bg-linear-to-r from-yellow-50 to-white border border-yellow-100 shadow-sm"
-                        >
-                          <div className="w-12 h-12 rounded-full bg-[#FFB20E]/20 flex items-center justify-center shrink-0">
-                            <span className="text-xl">🎉</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-[#1B2B65] truncate">
-                              {promo.name}
-                            </h4>
-                            <p className="text-xs text-gray-500 font-medium mt-0.5">
-                              S/d{" "}
-                              {new Date(promo.end_date).toLocaleDateString(
-                                "id-ID",
-                              )}
-                            </p>
-                          </div>
-                          <div className="bg-[#1B2B65] text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm whitespace-nowrap">
-                            {promo.discount_type === "PERCENTAGE"
-                              ? `${promo.discount_value}% OFF`
-                              : `- Rp ${Number(
-                                  promo.discount_value,
-                                ).toLocaleString("id-ID")}`}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <StoreReviewsCard products={allProducts} />
                 </div>
               </div>
             </div>
