@@ -44,7 +44,7 @@ export default class SellerLayout extends Component<
   };
 
   private getNavClass = ({ isActive }: { isActive: boolean }) =>
-    `font-semibold tracking-wide transition-colors duration-200 ${
+    `font-semibold tracking-wide transition-colors duration-200 whitespace-nowrap ${
       isActive
         ? "text-[#FFD13B] border-b-2 border-[#FFD13B] pb-1"
         : "text-white hover:text-gray-300"
@@ -65,7 +65,7 @@ export default class SellerLayout extends Component<
             <div className="flex justify-between items-center h-20">
               <Link
                 to="/seller"
-                className="flex items-center gap-4 hover:opacity-90 transition-opacity focus:outline-none"
+                className="flex items-center gap-4 hover:opacity-90 transition-opacity focus:outline-none shrink-0"
                 onClick={this.closeMenu}
               >
                 <img
@@ -73,12 +73,12 @@ export default class SellerLayout extends Component<
                   alt="UniBites Mascot"
                   className="h-14 w-auto object-contain"
                 />
-                <span className="text-white text-2xl font-bold tracking-wide">
+                <span className="text-white text-2xl font-bold tracking-wide hidden sm:block">
                   UniBites
                 </span>
               </Link>
 
-              <ul className="hidden md:flex md:items-center gap-8 ml-auto mr-10">
+              <ul className="hidden md:flex md:items-center gap-6 lg:gap-8 mx-auto px-4">
                 <li>
                   <NavLink to="/seller" end className={this.getNavClass}>
                     Dashboard
@@ -99,6 +99,11 @@ export default class SellerLayout extends Component<
                     Promo
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink to="/seller/reviews" className={this.getNavClass}>
+                    Ulasan
+                  </NavLink>
+                </li>
               </ul>
 
               <div className="md:hidden flex items-center">
@@ -112,7 +117,7 @@ export default class SellerLayout extends Component<
                 </button>
               </div>
 
-              <div className="hidden md:flex md:items-center gap-4 border-l border-white/20 pl-6">
+              <div className="hidden md:flex md:items-center gap-4 border-l border-white/20 pl-6 shrink-0">
                 {storeName && (
                   <span className="text-white font-medium text-sm hidden lg:block text-right">
                     Halo, <br />
@@ -180,6 +185,15 @@ export default class SellerLayout extends Component<
                   onClick={this.closeMenu}
                 >
                   Promo
+                </NavLink>
+              </li>
+              <li className="w-full">
+                <NavLink
+                  to="/seller/reviews"
+                  className={this.getMobileNavClass}
+                  onClick={this.closeMenu}
+                >
+                  Ulasan
                 </NavLink>
               </li>
               <li className="w-full flex justify-center pt-6 border-t border-white/10 mt-2">

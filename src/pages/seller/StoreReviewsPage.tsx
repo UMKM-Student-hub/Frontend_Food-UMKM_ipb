@@ -121,7 +121,7 @@ export default class StoreReviewsPage extends Component<
 
             <div className="lg:col-span-2 flex flex-col gap-4">
               {reviews.length === 0 ? (
-                <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
+                <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center h-full min-h-75">
                   <span className="text-6xl mb-4">⭐</span>
                   <p className="text-lg font-bold text-[#1B2B65]">
                     Belum Ada Ulasan
@@ -131,7 +131,7 @@ export default class StoreReviewsPage extends Component<
                   </p>
                 </div>
               ) : filteredReviews.length === 0 ? (
-                <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center h-full min-h-[300px]">
+                <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center h-full min-h-75">
                   <p className="text-lg font-bold text-[#1B2B65]">
                     Tidak Ditemukan
                   </p>
