@@ -83,6 +83,9 @@ const PromoManagementPage = lazy(
   () => import("./pages/seller/PromoManagementPage.tsx"),
 );
 const SellerProfilePage = lazy(() => import("./pages/seller/ProfilePage.tsx"));
+const StoreReviewsPage = lazy(
+  () => import("./pages/seller/StoreReviewsPage.tsx"),
+);
 
 const ProductDetailPageWrapper = () => {
   const params = useParams();
@@ -133,6 +136,7 @@ const router = createBrowserRouter([
       { path: "products", element: <ProductManagementPage /> },
       { path: "promos", element: <PromoManagementPage /> },
       { path: "profile", element: <SellerProfilePage /> },
+      { path: "reviews", element: <StoreReviewsPage /> },
     ],
   },
 ]);
